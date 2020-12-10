@@ -15,25 +15,13 @@ class UrlGenerator extends IlluminateUrlGenerator
     protected $collections;
 
     /**
-     * Create a new URL generator instance.
-     *
-     * @param \Dingo\Api\Http\Request $request
-     *
-     * @return void
-     */
-    public function __construct(Request $request)
-    {
-        $this->setRequest($request);
-    }
-
-    /**
      * Set the routes to use from the version.
      *
      * @param string $version
      *
      * @return \Dingo\Api\Routing\UrlGenerator
      */
-    public function version($version)
+    public function version(string $version)
     {
         $this->routes = $this->collections[$version];
 

@@ -5,51 +5,53 @@ namespace Dingo\Api\Http\Middleware;
 use Closure;
 use Exception;
 use Dingo\Api\Routing\Router;
+use Illuminate\Http\Response;
 use Laravel\Lumen\Application;
 use Illuminate\Pipeline\Pipeline;
 use Dingo\Api\Http\RequestValidator;
 use Dingo\Api\Event\RequestWasMatched;
+use Illuminate\Http\Request as IlluminateRequest;
 use Dingo\Api\Http\Request as HttpRequest;
 use Illuminate\Contracts\Container\Container;
 use Dingo\Api\Contract\Debug\ExceptionHandler;
-use Dingo\Api\Contract\Http\Request as RequestContract;
 use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
 use Illuminate\Contracts\Debug\ExceptionHandler as LaravelExceptionHandler;
+use Throwable;
 
 class Request
 {
     /**
      * Application instance.
      *
-     * @var \Illuminate\Contracts\Foundation\Application
+     * @var Container
      */
     protected $app;
 
     /**
      * Exception handler instance.
      *
-     * @var \Dingo\Api\Contract\Debug\ExceptionHandler
+     * @var ExceptionHandler
      */
     protected $exception;
 
     /**
      * Router instance.
      *
-     * @var \Dingo\Api\Routing\Router
+     * @var Router
      */
     protected $router;
 
     /**
      * HTTP validator instance.
      *
-     * @var \Dingo\Api\Http\Validator
+     * @var RequestValidator
      */
     protected $validator;
 
     /**
      * Event dispatcher instance.
      *
-     * @var \Illuminate\Contracts\Events\Dispatcher
+     * @var EventDispatcher
      */
     protected $events;
 
@@ -61,15 +63,12 @@ class Request
     protected $middleware = [];
 
     /**
-     * Create a new request middleware instance.
-     *
-     * @param \Illuminate\Contracts\Foundation\Application $app
-     * @param \Dingo\Api\Contract\Debug\ExceptionHandler   $exception
-     * @param \Dingo\Api\Routing\Router                    $router
-     * @param \Dingo\Api\Http\RequestValidator             $validator
-     * @param \Illuminate\Contracts\Events\Dispatcher      $events
-     *
-     * @return void
+     * Request constructor.
+     * @param Container $app
+     * @param ExceptionHandler $exception
+     * @param Router $router
+     * @param RequestValidator $validator
+     * @param EventDispatcher $events
      */
     public function __construct(Container $app, ExceptionHandler $exception, Router $router, RequestValidator $validator, EventDispatcher $events)
     {
@@ -81,14 +80,12 @@ class Request
     }
 
     /**
-     * Handle an incoming request.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @param \Closure                 $next
-     *
+     * @param IlluminateRequest $request
+     * @param Closure $next
      * @return mixed
+     * @throws Throwable
      */
-    public function handle($request, Closure $next)
+    public function handle(IlluminateRequest $request, Closure $next)
     {
         try {
             if ($this->validator->validateRequest($request)) {
@@ -96,7 +93,7 @@ class Request
                     return $app[ExceptionHandler::class];
                 });
 
-                $request = $this->app->make(RequestContract::class)->createFromIlluminate($request);
+                $request = HttpRequest::createFromIlluminate($request);
 
                 $this->events->dispatch(new RequestWasMatched($request, $this->app));
 
@@ -114,9 +111,9 @@ class Request
     /**
      * Send the request through the Dingo router.
      *
-     * @param \Dingo\Api\Http\Request $request
+     * @param HttpRequest $request
      *
-     * @return \Dingo\Api\Http\Response
+     * @return mixed
      */
     protected function sendRequestThroughRouter(HttpRequest $request)
     {
@@ -128,11 +125,11 @@ class Request
     }
 
     /**
-     * Call the terminate method on middlewares.
-     *
-     * @return void
+     * @param IlluminateRequest $request
+     * @param Response $response
+     * @throws Throwable
      */
-    public function terminate($request, $response)
+    public function terminate(IlluminateRequest $request, Response $response) : void
     {
         if (! ($request = $this->app['request']) instanceof HttpRequest) {
             return;
@@ -176,7 +173,7 @@ class Request
      *
      * @return array
      */
-    protected function parseMiddleware($middleware)
+    protected function parseMiddleware(string $middleware) : array
     {
         [$name, $parameters] = array_pad(explode(':', $middleware, 2), 2, []);
 
@@ -190,11 +187,11 @@ class Request
     /**
      * Gather the middlewares for the route.
      *
-     * @param \Dingo\Api\Http\Request $request
+     * @param HttpRequest $request
      *
      * @return array
      */
-    protected function gatherRouteMiddlewares($request)
+    protected function gatherRouteMiddlewares(HttpRequest $request) : array
     {
         if ($route = $request->route()) {
             return $this->router->gatherRouteMiddlewares($route);
@@ -210,7 +207,7 @@ class Request
      *
      * @return void
      */
-    public function setMiddlewares(array $middleware)
+    public function setMiddlewares(array $middleware) : void
     {
         $this->middleware = $middleware;
     }
@@ -222,7 +219,7 @@ class Request
      *
      * @return void
      */
-    public function mergeMiddlewares(array $middleware)
+    public function mergeMiddlewares(array $middleware) : void
     {
         $this->middleware = array_merge($this->middleware, $middleware);
     }

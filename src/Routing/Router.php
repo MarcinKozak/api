@@ -19,6 +19,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException;
+use Throwable;
 
 class Router
 {
@@ -508,7 +509,7 @@ class Router
      * @param Request $request
      *
      * @return Response
-     * @throws Exception
+     * @throws Exception|Throwable
      *
      */
     public function dispatch(Request $request) : Response

@@ -4,6 +4,7 @@ namespace Dingo\Api\Transformer;
 
 use Closure;
 use Illuminate\Container\Container;
+use League\Fractal\TransformerAbstract;
 
 class Binding
 {
@@ -60,9 +61,9 @@ class Binding
     /**
      * Resolve a transformer binding instance.
      *
-     * @return object
+     * @return TransformerAbstract
      */
-    public function resolveTransformer() : object
+    public function resolveTransformer() : TransformerAbstract
     {
         return $this->resolver->create($this->container);
     }
@@ -70,11 +71,11 @@ class Binding
     /**
      * Fire the binding callback.
      *
-     * @param array $parameters
+     * @param ...$parameters
      *
      * @return void
      */
-    public function fireCallback(array $parameters = []) : void
+    public function fireCallback(...$parameters) : void
     {
         if (is_callable($this->callback)) {
             call_user_func_array($this->callback, $parameters);

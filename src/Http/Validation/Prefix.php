@@ -21,7 +21,7 @@ class Prefix implements Validator
      *
      * @return void
      */
-    public function __construct($prefix)
+    public function __construct(string $prefix)
     {
         $this->prefix = $prefix;
     }
@@ -30,28 +30,28 @@ class Prefix implements Validator
      * Validate the request has a prefix and if it matches the configured
      * API prefix.
      *
-     * @param \Illuminate\Http\Request $request
+     * @param Request $request
      *
      * @return bool
      */
-    public function validate(Request $request)
+    public function validate(Request $request) : bool
     {
         $prefix = $this->filterAndExplode($this->prefix);
 
         $path = $this->filterAndExplode($request->getPathInfo());
 
-        return ! is_null($this->prefix) && $prefix == array_slice($path, 0, count($prefix));
+        return ! is_null($this->prefix) && $prefix === array_slice($path, 0, count($prefix));
     }
 
     /**
      * Explode array on slash and remove empty values.
      *
-     * @param array $array
+     * @param string $value
      *
      * @return array
      */
-    protected function filterAndExplode($array)
+    protected function filterAndExplode(string $value) : array
     {
-        return array_filter(explode('/', $array));
+        return array_filter(explode('/', $value));
     }
 }

@@ -100,7 +100,7 @@ class Factory
      * @param Closure|null $after
      * @return Response
      */
-    public function item(object $item, $transformer = null, $parameters = [], Closure $after = null)
+    public function item(object $item, $transformer = null, $parameters = [], Closure $after = null): Response
     {
         $class      = $item === null ? stdClass::class : get_class($item);
         $binding    = $this->createBinding($class, $item, $transformer, $parameters, $after);
@@ -139,7 +139,7 @@ class Factory
      *
      * @return Response
      */
-    public function array(array $array, $transformer = null, $parameters = [], Closure $after = null)
+    public function array(array $array, $transformer = null, $parameters = [], Closure $after = null): Response
     {
         if ($parameters instanceof Closure) {
             $after = $parameters;
@@ -171,7 +171,7 @@ class Factory
      *
      * @return Response
      */
-    public function paginator(Paginator $paginator, $transformer = null, array $parameters = [], Closure $after = null)
+    public function paginator(Paginator $paginator, $transformer = null, array $parameters = [], Closure $after = null): Response
     {
         if ($paginator->isEmpty()) {
             $class = get_class($paginator);
@@ -194,11 +194,11 @@ class Factory
      * @param string $message
      * @param int    $statusCode
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
-     *
      * @return void
+     * @throws HttpException
+     *
      */
-    public function error($message, $statusCode)
+    public function error(string $message, int $statusCode) : void
     {
         throw new HttpException($statusCode, $message);
     }
@@ -208,11 +208,11 @@ class Factory
      *
      * @param string $message
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
-     *
      * @return void
+     * @throws HttpException
+     *
      */
-    public function errorNotFound($message = 'Not Found')
+    public function errorNotFound(string $message = 'Not Found') : void
     {
         $this->error($message, 404);
     }
@@ -222,11 +222,11 @@ class Factory
      *
      * @param string $message
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
-     *
      * @return void
+     * @throws HttpException
+     *
      */
-    public function errorBadRequest($message = 'Bad Request')
+    public function errorBadRequest(string $message = 'Bad Request') : void
     {
         $this->error($message, 400);
     }
@@ -236,11 +236,11 @@ class Factory
      *
      * @param string $message
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
-     *
      * @return void
+     * @throws HttpException
+     *
      */
-    public function errorForbidden($message = 'Forbidden')
+    public function errorForbidden(string $message = 'Forbidden') : void
     {
         $this->error($message, 403);
     }
@@ -250,11 +250,11 @@ class Factory
      *
      * @param string $message
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
-     *
      * @return void
+     * @throws HttpException
+     *
      */
-    public function errorInternal($message = 'Internal Error')
+    public function errorInternal(string $message = 'Internal Error') : void
     {
         $this->error($message, 500);
     }
@@ -264,11 +264,11 @@ class Factory
      *
      * @param string $message
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
-     *
      * @return void
+     * @throws HttpException
+     *
      */
-    public function errorUnauthorized($message = 'Unauthorized')
+    public function errorUnauthorized(string $message = 'Unauthorized') : void
     {
         $this->error($message, 401);
     }
@@ -278,11 +278,11 @@ class Factory
      *
      * @param string $message
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
-     *
      * @return void
+     * @throws HttpException
+     *
      */
-    public function errorMethodNotAllowed($message = 'Method Not Allowed')
+    public function errorMethodNotAllowed(string $message = 'Method Not Allowed') : void
     {
         $this->error($message, 405);
     }
@@ -297,15 +297,16 @@ class Factory
      *
      * @return mixed
      */
-    public function __call($method, $parameters)
+    public function __call(string $method, array $parameters)
     {
         if (Str::startsWith($method, 'with')) {
             return call_user_func_array([$this, Str::camel(substr($method, 4))], $parameters);
-
+        }
         // Because PHP won't let us name the method "array" we'll simply watch for it
             // in here and return the new binding. Gross. This is now DEPRECATED and
             // should not be used. Just return an array or a new response instance.
-        } elseif ($method == 'array') {
+
+        if ($method === 'array') {
             return new Response($parameters[0]);
         }
 

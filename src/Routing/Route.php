@@ -336,7 +336,7 @@ class Route extends BaseRoute
      *
      * @return bool
      */
-    public function hasThrottle() : array
+    public function hasThrottle() : bool
     {
         return ! is_null($this->throttle);
     }
@@ -520,16 +520,6 @@ class Route extends BaseRoute
     {
         return in_array('http', $this->action, true)
             || (array_key_exists('http', $this->action) && $this->action['http']);
-    }
-
-    /**
-     * Determine if the route only responds to HTTPS requests.
-     *
-     * @return bool
-     */
-    public function httpsOnly() : bool
-    {
-        return $this->secure();
     }
 
     /**

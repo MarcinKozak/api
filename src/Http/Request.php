@@ -109,13 +109,4 @@ class Request extends IlluminateRequest implements RequestInterface
         static::$acceptParser = $acceptParser;
     }
 
-    /**
-     * Get the accept parser instance.
-     *
-     * @return Accept
-     */
-    public static function getAcceptParser() : Accept
-    {
-        return static::$acceptParser;
-    }
 }

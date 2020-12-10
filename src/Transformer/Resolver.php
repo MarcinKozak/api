@@ -4,6 +4,7 @@ namespace Dingo\Api\Transformer;
 
 use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Contracts\Container\Container;
+use League\Fractal\TransformerAbstract;
 use RuntimeException;
 
 class Resolver {
@@ -18,7 +19,7 @@ class Resolver {
      * @param $resolver
      */
     public function __construct($resolver) {
-        assert($this->isValid($resolver), 'Resolver is not valid.');
+        assert($this->isValid($resolver), 'Transform resolver is not valid.');
 
         $this->resolver = $resolver;
     }
@@ -28,28 +29,34 @@ class Resolver {
      * @return bool
      */
     private function isValid($resolver) : bool {
-        return is_string($resolver) || is_object($resolver) || is_callable($resolver);
+        return is_string($resolver) || is_callable($resolver) || $resolver instanceof TransformerAbstract;
     }
 
     /**
      * @param Container $container
-     * @return object
+     * @return TransformerAbstract
      */
-    public function create(Container $container) : object {
+    public function create(Container $container) : TransformerAbstract {
+        $transform = $this->resolver;
+
         if (is_string($this->resolver)) {
             try {
-                return $container->make($this->resolver);
+                $transform = $container->make($this->resolver);
             }
             catch(BindingResolutionException $e) {
                 throw new RuntimeException('Unable to resolve transformer binding.');
             }
         }
 
-        if (is_callable($this->resolver)) {
-            return call_user_func($this->resolver, $container);
+        else if (is_callable($this->resolver)) {
+            $transform = call_user_func($this->resolver, $container);
         }
 
-        return $this->resolver;
+        if($transform instanceof TransformerAbstract) {
+            return $transform;
+        }
+
+        throw new RuntimeException('Cannot resolve transformer class due invalid type.');
     }
 
 }

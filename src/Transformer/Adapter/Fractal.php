@@ -4,6 +4,9 @@ namespace Dingo\Api\Transformer\Adapter;
 
 use Dingo\Api\Http\Request;
 use Dingo\Api\Transformer\Binding;
+use Illuminate\Pagination\AbstractPaginator;
+use League\Fractal\Resource\Collection;
+use League\Fractal\Resource\ResourceInterface;
 use League\Fractal\TransformerAbstract;
 use Dingo\Api\Contract\Transformer\Adapter;
 use League\Fractal\Manager as FractalManager;
@@ -19,7 +22,7 @@ class Fractal implements Adapter
     /**
      * Fractal manager instance.
      *
-     * @var \League\Fractal\Manager
+     * @var FractalManager
      */
     protected $fractal;
 
@@ -45,14 +48,11 @@ class Fractal implements Adapter
     protected $eagerLoading = true;
 
     /**
-     * Create a new fractal transformer instance.
-     *
-     * @param \League\Fractal\Manager $fractal
-     * @param string                  $includeKey
-     * @param string                  $includeSeparator
-     * @param bool                    $eagerLoading
-     *
-     * @return void
+     * Fractal constructor.
+     * @param FractalManager $fractal
+     * @param string $includeKey
+     * @param string $includeSeparator
+     * @param bool $eagerLoading
      */
     public function __construct(FractalManager $fractal, $includeKey = 'include', $includeSeparator = ',', $eagerLoading = true)
     {
@@ -65,14 +65,13 @@ class Fractal implements Adapter
     /**
      * Transform a response with a transformer.
      *
-     * @param mixed                                     $response
-     * @param League\Fractal\TransformerAbstract|object $transformer
-     * @param \Dingo\Api\Transformer\Binding            $binding
-     * @param \Dingo\Api\Http\Request                   $request
-     *
+     * @param mixed $response
+     * @param object $transformer
+     * @param Binding $binding
+     * @param Request $request
      * @return array
      */
-    public function transform($response, $transformer, Binding $binding, Request $request)
+    public function transform($response, object $transformer, Binding $binding, Request $request) : array
     {
         $this->parseFractalIncludes($request);
 
@@ -81,7 +80,7 @@ class Fractal implements Adapter
         // If the response is a paginator then we'll create a new paginator
         // adapter for Laravel and set the paginator instance on our
         // collection resource.
-        if ($response instanceof IlluminatePaginator) {
+        if ($response instanceof IlluminatePaginator && $resource instanceof Collection) {
             $paginator = $this->createPaginatorAdapter($response);
 
             $resource->setPaginator($paginator);
@@ -104,7 +103,7 @@ class Fractal implements Adapter
 
         $binding->fireCallback($resource, $this->fractal);
 
-        $identifier = isset($parameters['identifier']) ? $parameters['identifier'] : null;
+        $identifier = $parameters['identifier'] ?? null;
 
         return $this->fractal->createData($resource, $identifier)->toArray();
     }
@@ -117,9 +116,9 @@ class Fractal implements Adapter
      *
      * @return bool
      */
-    protected function shouldEagerLoad($response)
+    protected function shouldEagerLoad($response) : bool
     {
-        if ($response instanceof IlluminatePaginator) {
+        if ($response instanceof AbstractPaginator) {
             $response = $response->getCollection();
         }
 
@@ -141,15 +140,14 @@ class Fractal implements Adapter
     /**
      * Create a Fractal resource instance.
      *
-     * @param mixed                               $response
-     * @param \League\Fractal\TransformerAbstract $transformer
-     * @param array                               $parameters
-     *
-     * @return \League\Fractal\Resource\Item|\League\Fractal\Resource\Collection
+     * @param $response
+     * @param object $transformer
+     * @param array $parameters
+     * @return ResourceInterface
      */
-    protected function createResource($response, $transformer, array $parameters)
+    protected function createResource($response, object $transformer, array $parameters) : ResourceInterface
     {
-        $key = isset($parameters['key']) ? $parameters['key'] : null;
+        $key = $parameters['key'] ?? null;
 
         if ($response instanceof IlluminatePaginator || $response instanceof IlluminateCollection) {
             return new FractalCollection($response, $transformer, $key);
@@ -161,11 +159,11 @@ class Fractal implements Adapter
     /**
      * Parse the includes.
      *
-     * @param \Dingo\Api\Http\Request $request
+     * @param Request $request
      *
      * @return void
      */
-    public function parseFractalIncludes(Request $request)
+    public function parseFractalIncludes(Request $request) : void
     {
         $includes = $request->input($this->includeKey);
 
@@ -179,9 +177,9 @@ class Fractal implements Adapter
     /**
      * Get the underlying Fractal instance.
      *
-     * @return \League\Fractal\Manager
+     * @return FractalManager
      */
-    public function getFractal()
+    public function getFractal() : FractalManager
     {
         return $this->fractal;
     }
@@ -189,15 +187,13 @@ class Fractal implements Adapter
     /**
      * Get includes as their array keys for eager loading.
      *
-     * @param \League\Fractal\TransformerAbstract $transformer
-     * @param string|array                        $requestedIncludes
-     *
+     * @param TransformerAbstract $transformer
+     * @param array $requestedIncludes
      * @return array
      */
-    protected function mergeEagerLoads($transformer, $requestedIncludes)
+    protected function mergeEagerLoads(TransformerAbstract $transformer, array $requestedIncludes) : array
     {
-        $includes = array_merge($requestedIncludes, $transformer->getDefaultIncludes());
-
+        $includes   = array_merge($requestedIncludes, $transformer->getDefaultIncludes());
         $eagerLoads = [];
 
         foreach ($includes as $key => $value) {
@@ -214,9 +210,9 @@ class Fractal implements Adapter
     /**
      * Disable eager loading.
      *
-     * @return \Dingo\Api\Transformer\Adapter\Fractal
+     * @return $this
      */
-    public function disableEagerLoading()
+    public function disableEagerLoading() : self
     {
         $this->eagerLoading = false;
 
@@ -226,9 +222,9 @@ class Fractal implements Adapter
     /**
      * Enable eager loading.
      *
-     * @return \Dingo\Api\Transformer\Adapter\Fractal
+     * @return $this
      */
-    public function enableEagerLoading()
+    public function enableEagerLoading() : self
     {
         $this->eagerLoading = true;
 

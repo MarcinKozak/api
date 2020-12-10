@@ -13,7 +13,7 @@ class RoutingServiceProvider extends ServiceProvider
     /**
      * Register the service provider.
      */
-    public function register()
+    public function register() : void
     {
         $this->registerRouter();
 
@@ -23,7 +23,7 @@ class RoutingServiceProvider extends ServiceProvider
     /**
      * Register the router.
      */
-    protected function registerRouter()
+    protected function registerRouter() : void
     {
         $this->app->singleton('api.router', function ($app) {
             $router = new Router(
@@ -47,7 +47,7 @@ class RoutingServiceProvider extends ServiceProvider
     /**
      * Register the URL generator.
      */
-    protected function registerUrlGenerator()
+    protected function registerUrlGenerator() : void
     {
         $this->app->singleton('api.url', function ($app) {
             $url = new UrlGenerator($app['request']);

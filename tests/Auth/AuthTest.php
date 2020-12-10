@@ -74,7 +74,7 @@ class AuthTest extends BaseTestCase
         $this->router->shouldReceive('getCurrentRequest')->once()->andReturn($request = Request::create('foo', 'GET'));
 
         $provider = m::mock(Provider::class);
-        $provider->shouldReceive('authenticate')->once()->with($request, $route)->andReturn((object) ['id' => 1]);
+        $provider->shouldReceive('authenticate')->once()->with($request, $route)->andReturn(new GenericUser(['id' => 1]));
 
         $this->auth->extend('provider', $provider);
 
@@ -89,7 +89,7 @@ class AuthTest extends BaseTestCase
         $this->router->shouldReceive('getCurrentRequest')->once()->andReturn($request = Request::create('foo', 'GET'));
 
         $provider = m::mock(Provider::class);
-        $provider->shouldReceive('authenticate')->once()->with($request, $route)->andReturn((object) ['id' => 1]);
+        $provider->shouldReceive('authenticate')->once()->with($request, $route)->andReturn(new GenericUser(['id' => 1]));
 
         $this->auth->extend('one', m::mock(Provider::class));
         $this->auth->extend('two', $provider);

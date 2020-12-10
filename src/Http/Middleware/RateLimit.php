@@ -4,11 +4,12 @@ namespace Dingo\Api\Http\Middleware;
 
 use Closure;
 use Dingo\Api\Http\InternalRequest;
-use Dingo\Api\Http\Response;
 use Dingo\Api\Routing\Route;
 use Dingo\Api\Routing\Router;
 use Dingo\Api\Http\RateLimit\Handler;
 use Dingo\Api\Exception\RateLimitExceededException;
+use Illuminate\Http\Request as IlluminateRequest;
+use Illuminate\Http\Response;
 
 class RateLimit
 {
@@ -43,12 +44,12 @@ class RateLimit
     /**
      * Perform rate limiting before a request is executed.
      *
-     * @param Request $request
+     * @param IlluminateRequest $request
      * @param Closure $next
      *
-     * @return mixed
+     * @return Response|mixed
      */
-    public function handle(Request $request, Closure $next)
+    public function handle(IlluminateRequest $request, Closure $next)
     {
         if ($request instanceof InternalRequest) {
             return $next($request);
@@ -90,11 +91,10 @@ class RateLimit
     /**
      * Send the response with the rate limit headers.
      *
-     * @param \Dingo\Api\Http\Response $response
-     *
-     * @return \Dingo\Api\Http\Response
+     * @param Response $response
+     * @return Response
      */
-    protected function responseWithHeaders($response)
+    protected function responseWithHeaders(Response $response) : Response
     {
         foreach ($this->getHeaders() as $key => $value) {
             $response->headers->set($key, $value);
@@ -108,7 +108,7 @@ class RateLimit
      *
      * @return array
      */
-    protected function getHeaders()
+    protected function getHeaders() : array
     {
         return [
             'X-RateLimit-Limit' => $this->handler->getThrottleLimit(),

@@ -47,11 +47,10 @@ class Factory {
     /**
      * Register a transformer binding resolver for a class.
      *
-     * @param               $class
-     * @param               $resolver
+     * @param string $class
+     * @param Resolver $resolver
      * @param array $parameters
      * @param Closure|null $after
-     *
      * @return Binding
      */
     public function register(string $class, Resolver $resolver, array $parameters = [], Closure $after = null): Binding {

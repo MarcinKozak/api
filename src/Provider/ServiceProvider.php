@@ -23,7 +23,7 @@ abstract class ServiceProvider extends IlluminateServiceProvider
      *
      * @return mixed
      */
-    protected function config($item, $instantiate = true)
+    protected function config(string $item, bool $instantiate = true)
     {
         $value = $this->app['config']->get('api.'.$item);
 
@@ -42,7 +42,7 @@ abstract class ServiceProvider extends IlluminateServiceProvider
      *
      * @return array
      */
-    protected function instantiateConfigValues($item, array $values)
+    protected function instantiateConfigValues(string $item, array $values) : array
     {
         foreach ($values as $key => $value) {
             $values[$key] = $this->instantiateConfigValue($item, $value);
@@ -57,11 +57,11 @@ abstract class ServiceProvider extends IlluminateServiceProvider
      * @param string $item
      * @param mixed  $value
      *
-     * @return mixed
+     * @return object
      */
-    protected function instantiateConfigValue($item, $value)
+    protected function instantiateConfigValue(string $item, $value) : object
     {
-        if (is_string($value) && in_array($item, $this->instantiable)) {
+        if (is_string($value) && in_array($item, $this->instantiable, true)) {
             return $this->app->make($value);
         }
 
