@@ -2,6 +2,9 @@
 
 namespace Dingo\Api\Http\Response\Format;
 
+use ErrorException;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Contracts\Support\Arrayable;
 
@@ -17,11 +20,12 @@ class Json extends Format
     /**
      * Format an Eloquent model.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param Model $model
      *
      * @return string
+     * @throws ErrorException
      */
-    public function formatEloquentModel($model)
+    public function formatEloquentModel(Model $model) : string
     {
         $key = Str::singular($model->getTable());
 
@@ -35,11 +39,12 @@ class Json extends Format
     /**
      * Format an Eloquent collection.
      *
-     * @param \Illuminate\Database\Eloquent\Collection $collection
+     * @param Collection $collection
      *
      * @return string
+     * @throws ErrorException
      */
-    public function formatEloquentCollection($collection)
+    public function formatEloquentCollection(Collection $collection) : string
     {
         if ($collection->isEmpty()) {
             return $this->encode([]);
@@ -58,11 +63,12 @@ class Json extends Format
     /**
      * Format an array or instance implementing Arrayable.
      *
-     * @param array|\Illuminate\Contracts\Support\Arrayable $content
+     * @param array|Arrayable $content
      *
      * @return string
+     * @throws ErrorException
      */
-    public function formatArray($content)
+    public function formatArray($content) : string
     {
         $content = $this->morphToArray($content);
 
@@ -78,7 +84,7 @@ class Json extends Format
      *
      * @return string
      */
-    public function getContentType()
+    public function getContentType() : string
     {
         return 'application/json';
     }
@@ -86,11 +92,11 @@ class Json extends Format
     /**
      * Morph a value to an array.
      *
-     * @param array|\Illuminate\Contracts\Support\Arrayable $value
+     * @param array|Arrayable $value
      *
      * @return array
      */
-    protected function morphToArray($value)
+    protected function morphToArray($value) : array
     {
         return $value instanceof Arrayable ? $value->toArray() : $value;
     }
@@ -101,8 +107,9 @@ class Json extends Format
      * @param mixed $content
      *
      * @return string
+     * @throws ErrorException
      */
-    protected function encode($content)
+    protected function encode($content) : string
     {
         $jsonEncodeOptions = [];
 

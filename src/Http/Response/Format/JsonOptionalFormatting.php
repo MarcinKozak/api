@@ -2,6 +2,8 @@
 
 namespace Dingo\Api\Http\Response\Format;
 
+use ErrorException;
+
 trait JsonOptionalFormatting
 {
     /*
@@ -51,7 +53,7 @@ trait JsonOptionalFormatting
      *
      * @return bool
      */
-    protected function isJsonPrettyPrintEnabled()
+    protected function isJsonPrettyPrintEnabled() : bool
     {
         return isset($this->options['pretty_print']) && $this->options['pretty_print'] === true;
     }
@@ -61,29 +63,29 @@ trait JsonOptionalFormatting
      *
      * @return bool
      */
-    protected function isCustomIndentStyleRequired()
+    protected function isCustomIndentStyleRequired() : bool
     {
         return $this->isJsonPrettyPrintEnabled() &&
             isset($this->options['indent_style']) &&
-            in_array($this->options['indent_style'], $this->indentStyles);
+            in_array($this->options['indent_style'], $this->indentStyles, true);
     }
 
     /**
      * Perform JSON encode.
      *
-     * @param string $content
-     * @param array  $jsonEncodeOptions
+     * @param mixed $content
+     * @param array $jsonEncodeOptions
      *
      * @return string
+     * @throws ErrorException
      */
-    protected function performJsonEncoding($content, array $jsonEncodeOptions = [])
+    protected function performJsonEncoding($content, array $jsonEncodeOptions = []) : string
     {
-        $jsonEncodeOptions = $this->filterJsonEncodeOptions($jsonEncodeOptions);
-
-        $optionsBitmask = $this->calucateJsonEncodeOptionsBitmask($jsonEncodeOptions);
+        $jsonEncodeOptions  = $this->filterJsonEncodeOptions($jsonEncodeOptions);
+        $optionsBitmask     = $this->calculateJsonEncodeOptionsBitmask($jsonEncodeOptions);
 
         if (($encodedString = json_encode($content, $optionsBitmask)) === false) {
-            throw new \ErrorException('Error encoding data in JSON format: '.json_last_error());
+            throw new ErrorException('Error encoding data in JSON format: '.json_last_error());
         }
 
         return $encodedString;
@@ -96,7 +98,7 @@ trait JsonOptionalFormatting
      *
      * @return array
      */
-    protected function filterJsonEncodeOptions(array $jsonEncodeOptions)
+    protected function filterJsonEncodeOptions(array $jsonEncodeOptions) : array
     {
         return array_intersect($jsonEncodeOptions, $this->jsonEncodeOptionsWhitelist);
     }
@@ -108,9 +110,9 @@ trait JsonOptionalFormatting
      *
      * @return int
      */
-    protected function calucateJsonEncodeOptionsBitmask(array $jsonEncodeOptions)
+    protected function calculateJsonEncodeOptionsBitmask(array $jsonEncodeOptions) : int
     {
-        return array_sum($jsonEncodeOptions);
+        return (int) array_sum($jsonEncodeOptions);
     }
 
     /**
@@ -122,7 +124,7 @@ trait JsonOptionalFormatting
      *
      * @return string
      */
-    protected function indentPrettyPrintedJson($jsonString, $indentStyle, $defaultIndentSize = 2)
+    protected function indentPrettyPrintedJson(string $jsonString, string $indentStyle, int $defaultIndentSize = 2) : string
     {
         $indentChar = $this->getIndentCharForIndentStyle($indentStyle);
         $indentSize = $this->getPrettyPrintIndentSize() ?: $defaultIndentSize;
@@ -131,13 +133,13 @@ trait JsonOptionalFormatting
         // (number of chars, that are used to indent one level in each line),
         // indent the JSON string with given (or default) indent size.
         if ($this->hasVariousIndentSize($indentStyle)) {
-            return $this->peformIndentation($jsonString, $indentChar, $indentSize);
+            return $this->performIndentation($jsonString, $indentChar, $indentSize);
         }
 
         // Otherwise following the convention, that indent styles, that does not
         // allowed to have various indent size (e.g. tab) are indented using
         // one tabulation character per one indent level in each line.
-        return $this->peformIndentation($jsonString, $indentChar);
+        return $this->performIndentation($jsonString, $indentChar);
     }
 
     /**
@@ -147,7 +149,7 @@ trait JsonOptionalFormatting
      *
      * @return string
      */
-    protected function getIndentCharForIndentStyle($indentStyle)
+    protected function getIndentCharForIndentStyle(string $indentStyle) : string
     {
         return $this->indentChars[$indentStyle];
     }
@@ -157,7 +159,7 @@ trait JsonOptionalFormatting
      *
      * @return int|null
      */
-    protected function getPrettyPrintIndentSize()
+    protected function getPrettyPrintIndentSize() : ?int
     {
         return isset($this->options['indent_size'])
             ? (int) $this->options['indent_size']
@@ -171,9 +173,9 @@ trait JsonOptionalFormatting
      *
      * @return bool
      */
-    protected function hasVariousIndentSize($indentStyle)
+    protected function hasVariousIndentSize(string $indentStyle) : bool
     {
-        return in_array($indentStyle, $this->hasVariousIndentSize);
+        return in_array($indentStyle, $this->hasVariousIndentSize, true);
     }
 
     /**
@@ -187,7 +189,7 @@ trait JsonOptionalFormatting
      *
      * @return string
      */
-    protected function peformIndentation($jsonString, $indentChar = "\t", $indentSize = 1, $defaultSpaces = 4)
+    protected function performIndentation(string $jsonString, string $indentChar = "\t", int $indentSize = 1, int $defaultSpaces = 4) : string
     {
         $pattern = '/(^|\G) {'.$defaultSpaces.'}/m';
         $replacement = str_repeat($indentChar, $indentSize).'$1';

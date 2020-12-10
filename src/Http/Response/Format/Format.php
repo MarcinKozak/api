@@ -2,19 +2,25 @@
 
 namespace Dingo\Api\Http\Response\Format;
 
+use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
+
 abstract class Format
 {
     /**
      * Illuminate request instance.
      *
-     * @var \Illuminate\Http\Request
+     * @var Request
      */
     protected $request;
 
     /**
      * Illuminate response instance.
      *
-     * @var \Illuminate\Http\Response
+     * @var Response
      */
     protected $response;
 
@@ -23,16 +29,13 @@ abstract class Format
      *
      * @var array
      */
-    protected $options;
+    protected $options = [];
 
     /**
-     * Set the request instance.
-     *
-     * @param \Illuminate\Http\Request $request
-     *
-     * @return \Dingo\Api\Http\Response\Format\Format
+     * @param Request $request
+     * @return $this
      */
-    public function setRequest($request)
+    public function setRequest(Request $request) : self
     {
         $this->request = $request;
 
@@ -40,13 +43,10 @@ abstract class Format
     }
 
     /**
-     * Set the response instance.
-     *
-     * @param \Illuminate\Http\Response $response
-     *
-     * @return \Dingo\Api\Http\Response\Format\Format
+     * @param Response $response
+     * @return $this
      */
-    public function setResponse($response)
+    public function setResponse(Response $response) : self
     {
         $this->response = $response;
 
@@ -54,13 +54,10 @@ abstract class Format
     }
 
     /**
-     * Set the formats' options.
-     *
      * @param array $options
-     *
-     * @return \Dingo\Api\Http\Response\Format\Format
+     * @return $this
      */
-    public function setOptions(array $options)
+    public function setOptions(array $options) : self
     {
         $this->options = $options;
 
@@ -70,34 +67,34 @@ abstract class Format
     /**
      * Format an Eloquent model.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param Model $model
      *
      * @return string
      */
-    abstract public function formatEloquentModel($model);
+    abstract public function formatEloquentModel(Model $model) : string;
 
     /**
      * Format an Eloquent collection.
      *
-     * @param \Illuminate\Database\Eloquent\Collection $collection
+     * @param  Collection $collection
      *
      * @return string
      */
-    abstract public function formatEloquentCollection($collection);
+    abstract public function formatEloquentCollection(Collection $collection) : string;
 
     /**
      * Format an array or instance implementing Arrayable.
      *
-     * @param array|\Illuminate\Contracts\Support\Arrayable $content
+     * @param array|Arrayable $content
      *
      * @return string
      */
-    abstract public function formatArray($content);
+    abstract public function formatArray($content) : string;
 
     /**
      * Get the response content type.
      *
      * @return string
      */
-    abstract public function getContentType();
+    abstract public function getContentType() : string ;
 }

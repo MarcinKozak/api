@@ -2,6 +2,8 @@
 
 namespace Dingo\Api\Http\Response\Format;
 
+use ErrorException;
+
 class Jsonp extends Json
 {
     /**
@@ -15,10 +17,8 @@ class Jsonp extends Json
      * Create a new JSONP response formatter instance.
      *
      * @param string $callbackName
-     *
-     * @return void
      */
-    public function __construct($callbackName = 'callback')
+    public function __construct(string $callbackName = 'callback')
     {
         $this->callbackName = $callbackName;
     }
@@ -28,7 +28,7 @@ class Jsonp extends Json
      *
      * @return bool
      */
-    protected function hasValidCallback()
+    protected function hasValidCallback() : bool
     {
         return $this->request->query->has($this->callbackName);
     }
@@ -38,9 +38,9 @@ class Jsonp extends Json
      *
      * @return string
      */
-    protected function getCallback()
+    protected function getCallback() : string
     {
-        return $this->request->query->get($this->callbackName);
+        return (string) $this->request->query->get($this->callbackName);
     }
 
     /**
@@ -48,7 +48,7 @@ class Jsonp extends Json
      *
      * @return string
      */
-    public function getContentType()
+    public function getContentType() : string
     {
         if ($this->hasValidCallback()) {
             return 'application/javascript';
@@ -63,8 +63,9 @@ class Jsonp extends Json
      * @param mixed $content
      *
      * @return string
+     * @throws ErrorException
      */
-    protected function encode($content)
+    protected function encode($content) : string
     {
         $jsonString = parent::encode($content);
 
