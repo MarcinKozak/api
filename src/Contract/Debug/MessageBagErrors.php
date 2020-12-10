@@ -2,19 +2,21 @@
 
 namespace Dingo\Api\Contract\Debug;
 
+use Illuminate\Support\MessageBag;
+
 interface MessageBagErrors
 {
     /**
      * Get the errors message bag.
      *
-     * @return \Illuminate\Support\MessageBag
+     * @return MessageBag
      */
-    public function getErrors();
+    public function getErrors() : MessageBag;
 
     /**
      * Determine if message bag has any errors.
      *
      * @return bool
      */
-    public function hasErrors();
+    public function hasErrors() : bool;
 }

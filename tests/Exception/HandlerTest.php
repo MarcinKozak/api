@@ -12,6 +12,7 @@ use Illuminate\Http\Response;
 use Mockery as m;
 use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 
 class HandlerTest extends BaseTestCase
 {
@@ -20,7 +21,7 @@ class HandlerTest extends BaseTestCase
 
     public function setUp(): void
     {
-        $this->parentHandler = m::mock('Illuminate\Contracts\Debug\ExceptionHandler');
+        $this->parentHandler = m::mock(ExceptionHandler::class);
         $this->exceptionHandler = new Handler($this->parentHandler, [
             'message' => ':message',
             'errors' => ':errors',
@@ -30,15 +31,14 @@ class HandlerTest extends BaseTestCase
         ], false);
     }
 
-    public function testRegisterExceptionHandler()
+    public function testRegisterExceptionHandler(): void
     {
-        $this->exceptionHandler->register(function (HttpException $e) {
-            //
-        });
-        $this->assertArrayHasKey(HttpException::class, $this->exceptionHandler->getHandlers());
+        $this->exceptionHandler->register(static function (HttpException $e) {});
+
+        self::assertArrayHasKey(HttpException::class, $this->exceptionHandler->getHandlers());
     }
 
-    public function testExceptionHandlerHandlesException()
+    public function testExceptionHandlerHandlesException(): void
     {
         $this->exceptionHandler->register(function (HttpException $e) {
             return new Response('foo', 404);
@@ -48,12 +48,12 @@ class HandlerTest extends BaseTestCase
 
         $response = $this->exceptionHandler->handle($exception);
 
-        $this->assertSame('foo', $response->getContent());
-        $this->assertSame(404, $response->getStatusCode());
-        $this->assertSame($exception, $response->exception);
+        self::assertSame('foo', $response->getContent());
+        self::assertSame(404, $response->getStatusCode());
+        self::assertSame($exception, $response->exception);
     }
 
-    public function testExceptionHandlerHandlesExceptionAndCreatesNewResponse()
+    public function testExceptionHandlerHandlesExceptionAndCreatesNewResponse(): void
     {
         $this->exceptionHandler->register(function (HttpException $e) {
             return 'foo';
@@ -63,12 +63,12 @@ class HandlerTest extends BaseTestCase
 
         $response = $this->exceptionHandler->handle($exception);
 
-        $this->assertInstanceOf(Response::class, $response);
-        $this->assertSame('foo', $response->getContent());
-        $this->assertSame(404, $response->getStatusCode());
+        self::assertInstanceOf(Response::class, $response);
+        self::assertSame('foo', $response->getContent());
+        self::assertSame(404, $response->getStatusCode());
     }
 
-    public function testExceptionHandlerHandlesExceptionWithRedirectResponse()
+    public function testExceptionHandlerHandlesExceptionWithRedirectResponse(): void
     {
         $this->exceptionHandler->register(function (HttpException $e) {
             return new RedirectResponse('foo');
@@ -76,14 +76,15 @@ class HandlerTest extends BaseTestCase
 
         $exception = new HttpException(404, 'bar');
 
+        /* @var $response RedirectResponse */
         $response = $this->exceptionHandler->handle($exception);
 
-        $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame('foo', $response->getTargetUrl());
-        $this->assertSame(302, $response->getStatusCode());
+        self::assertInstanceOf(RedirectResponse::class, $response);
+        self::assertSame('foo', $response->getTargetUrl());
+        self::assertSame(302, $response->getStatusCode());
     }
 
-    public function testExceptionHandlerHandlesExceptionWithJsonResponse()
+    public function testExceptionHandlerHandlesExceptionWithJsonResponse(): void
     {
         $this->exceptionHandler->register(function (HttpException $e) {
             return new JsonResponse(['foo' => 'bar'], 404);
@@ -93,23 +94,23 @@ class HandlerTest extends BaseTestCase
 
         $response = $this->exceptionHandler->handle($exception);
 
-        $this->assertInstanceOf(JsonResponse::class, $response);
-        $this->assertSame('{"foo":"bar"}', $response->getContent());
-        $this->assertSame(404, $response->getStatusCode());
+        self::assertInstanceOf(JsonResponse::class, $response);
+        self::assertSame('{"foo":"bar"}', $response->getContent());
+        self::assertSame(404, $response->getStatusCode());
     }
 
-    public function testExceptionHandlerReturnsGenericWhenNoMatchingHandler()
+    public function testExceptionHandlerReturnsGenericWhenNoMatchingHandler(): void
     {
         $exception = new HttpException(404, 'bar');
 
         $response = $this->exceptionHandler->handle($exception);
 
-        $this->assertInstanceOf(Response::class, $response);
-        $this->assertSame('{"message":"bar","status_code":404}', $response->getContent());
-        $this->assertSame(404, $response->getStatusCode());
+        self::assertInstanceOf(Response::class, $response);
+        self::assertSame('{"message":"bar","status_code":404}', $response->getContent());
+        self::assertSame(404, $response->getStatusCode());
     }
 
-    public function testUsingMultidimensionalArrayForGenericResponse()
+    public function testUsingMultidimensionalArrayForGenericResponse(): void
     {
         $this->exceptionHandler->setErrorFormat([
             'error' => [
@@ -125,34 +126,34 @@ class HandlerTest extends BaseTestCase
 
         $response = $this->exceptionHandler->handle($exception);
 
-        $this->assertInstanceOf(Response::class, $response);
-        $this->assertSame('{"error":{"message":"bar","status_code":404}}', $response->getContent());
-        $this->assertSame(404, $response->getStatusCode());
+        self::assertInstanceOf(Response::class, $response);
+        self::assertSame('{"error":{"message":"bar","status_code":404}}', $response->getContent());
+        self::assertSame(404, $response->getStatusCode());
     }
 
-    public function testRegularExceptionsAreHandledByGenericHandler()
+    public function testRegularExceptionsAreHandledByGenericHandler(): void
     {
         $exception = new RuntimeException('Uh oh');
 
         $response = $this->exceptionHandler->handle($exception);
 
-        $this->assertSame('{"message":"Uh oh","status_code":500}', $response->getContent());
-        $this->assertSame(500, $response->getStatusCode());
-        $this->assertSame($exception, $response->exception);
+        self::assertSame('{"message":"Uh oh","status_code":500}', $response->getContent());
+        self::assertSame(500, $response->getStatusCode());
+        self::assertSame($exception, $response->exception);
     }
 
-    public function testResourceExceptionErrorsAreIncludedInResponse()
+    public function testResourceExceptionErrorsAreIncludedInResponse(): void
     {
         $exception = new ResourceException('bar', ['foo' => 'bar'], null, [], 10);
 
         $response = $this->exceptionHandler->handle($exception);
 
-        $this->assertInstanceOf(Response::class, $response);
-        $this->assertSame('{"message":"bar","errors":{"foo":["bar"]},"code":10,"status_code":422}', $response->getContent());
-        $this->assertSame(422, $response->getStatusCode());
+        self::assertInstanceOf(Response::class, $response);
+        self::assertSame('{"message":"bar","errors":{"foo":["bar"]},"code":10,"status_code":422}', $response->getContent());
+        self::assertSame(422, $response->getStatusCode());
     }
 
-    public function testExceptionTraceIncludedInResponse()
+    public function testExceptionTraceIncludedInResponse(): void
     {
         $this->exceptionHandler->setDebug(true);
 
@@ -160,23 +161,23 @@ class HandlerTest extends BaseTestCase
 
         $response = $this->exceptionHandler->handle($exception);
 
-        $object = json_decode($response->getContent());
+        $object = json_decode($response->getContent(), false);
 
-        $this->assertObjectHasAttribute('debug', $object);
+        self::assertObjectHasAttribute('debug', $object);
     }
 
-    public function testHttpExceptionsWithNoMessageUseStatusCodeMessage()
+    public function testHttpExceptionsWithNoMessageUseStatusCodeMessage(): void
     {
         $exception = new HttpException(404);
 
         $response = $this->exceptionHandler->handle($exception);
 
-        $this->assertInstanceOf(Response::class, $response);
-        $this->assertSame('{"message":"404 Not Found","status_code":404}', $response->getContent());
-        $this->assertSame(404, $response->getStatusCode());
+        self::assertInstanceOf(Response::class, $response);
+        self::assertSame('{"message":"404 Not Found","status_code":404}', $response->getContent());
+        self::assertSame(404, $response->getStatusCode());
     }
 
-    public function testExceptionsHandledByRenderAreReroutedThroughHandler()
+    public function testExceptionsHandledByRenderAreReroutedThroughHandler(): void
     {
         $request = ApiRequest::create('foo', 'GET');
 
@@ -184,10 +185,10 @@ class HandlerTest extends BaseTestCase
 
         $response = $this->exceptionHandler->render($request, $exception);
 
-        $this->assertSame('{"message":"404 Not Found","status_code":404}', $response->getContent());
+        self::assertSame('{"message":"404 Not Found","status_code":404}', $response->getContent());
     }
 
-    public function testSettingUserDefinedReplacements()
+    public function testSettingUserDefinedReplacements(): void
     {
         $this->exceptionHandler->setReplacements([':foo' => 'bar']);
         $this->exceptionHandler->setErrorFormat(['bing' => ':foo']);
@@ -196,6 +197,6 @@ class HandlerTest extends BaseTestCase
 
         $response = $this->exceptionHandler->handle($exception);
 
-        $this->assertSame('{"bing":"bar"}', $response->getContent());
+        self::assertSame('{"bing":"bar"}', $response->getContent());
     }
 }

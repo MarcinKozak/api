@@ -222,15 +222,13 @@ class Laravel implements Adapter
     /**
      * Prepare a route for serialization.
      *
-     * @param mixed $route
+     * @param Route $route
      *
      * @return mixed
      */
-    public function prepareRouteForSerialization($route)
+    public function prepareRouteForSerialization(Route $route) : void
     {
         $route->prepareForSerialization();
-
-        return $route;
     }
 
     /**

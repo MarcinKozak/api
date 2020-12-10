@@ -3,6 +3,7 @@
 namespace Dingo\Api\Auth\Provider;
 
 use Exception;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Tymon\JWTAuth\JWTAuth;
 use Dingo\Api\Routing\Route;
 use Illuminate\Http\Request;
@@ -14,14 +15,14 @@ class JWT extends Authorization
     /**
      * The JWTAuth instance.
      *
-     * @var \Tymon\JWTAuth\JWTAuth
+     * @var JWTAuth
      */
     protected $auth;
 
     /**
      * Create a new JWT provider instance.
      *
-     * @param \Tymon\JWTAuth\JWTAuth $auth
+     * @param JWTAuth $auth
      *
      * @return void
      */
@@ -33,12 +34,13 @@ class JWT extends Authorization
     /**
      * Authenticate request with a JWT.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param \Dingo\Api\Routing\Route $route
+     * @param Request $request
+     * @param Route $route
      *
      * @return mixed
+     * @throws Exception
      */
-    public function authenticate(Request $request, Route $route)
+    public function authenticate(Request $request, Route $route) : Authenticatable
     {
         $token = $this->getToken($request);
 
@@ -56,13 +58,13 @@ class JWT extends Authorization
     /**
      * Get the JWT from the request.
      *
-     * @param \Illuminate\Http\Request $request
+     * @param Request $request
      *
-     * @throws \Exception
+     * @throws Exception
      *
      * @return string
      */
-    protected function getToken(Request $request)
+    protected function getToken(Request $request) : string
     {
         try {
             $this->validateAuthorizationHeader($request);
@@ -80,11 +82,11 @@ class JWT extends Authorization
     /**
      * Parse JWT from the authorization header.
      *
-     * @param \Illuminate\Http\Request $request
+     * @param Request $request
      *
      * @return string
      */
-    protected function parseAuthorizationHeader(Request $request)
+    protected function parseAuthorizationHeader(Request $request) : string
     {
         return trim(str_ireplace($this->getAuthorizationMethod(), '', $request->header('authorization')));
     }
@@ -94,7 +96,7 @@ class JWT extends Authorization
      *
      * @return string
      */
-    public function getAuthorizationMethod()
+    public function getAuthorizationMethod() : string
     {
         return 'bearer';
     }

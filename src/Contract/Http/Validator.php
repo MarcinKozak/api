@@ -9,9 +9,9 @@ interface Validator
     /**
      * Validate a request.
      *
-     * @param \Illuminate\Http\Request $request
+     * @param IlluminateRequest $request
      *
      * @return bool
      */
-    public function validate(IlluminateRequest $request);
+    public function validate(IlluminateRequest $request) : bool;
 }

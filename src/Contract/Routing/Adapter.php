@@ -3,28 +3,30 @@
 namespace Dingo\Api\Contract\Routing;
 
 use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
+use Symfony\Component\HttpFoundation\Response;
 
 interface Adapter
 {
     /**
      * Dispatch a request.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param string                   $version
+     * @param Request $request
+     * @param string  $version
      *
-     * @return mixed
+     * @return Response
      */
-    public function dispatch(Request $request, $version);
+    public function dispatch(Request $request, string $version) : Response;
 
     /**
      * Get the URI, methods, and action from the route.
      *
-     * @param mixed                    $route
-     * @param \Illuminate\Http\Request $request
+     * @param Route $route
+     * @param Request $request
      *
      * @return array
      */
-    public function getRouteProperties($route, Request $request);
+    public function getRouteProperties(Route $route, Request $request) : array;
 
     /**
      * Add a route to the appropriate route collection.
@@ -36,26 +38,26 @@ interface Adapter
      *
      * @return void
      */
-    public function addRoute(array $methods, array $versions, $uri, $action);
+    public function addRoute(array $methods, array $versions, string $uri, $action) : void;
 
     /**
      * Get all routes or only for a specific version.
      *
-     * @param string $version
+     * @param string|null $version
      *
-     * @return mixed
+     * @return array
      */
-    public function getRoutes($version = null);
+    public function getRoutes(string $version = null) : array;
 
     /**
      * Get a normalized iterable set of routes. Top level key must be a version with each
      * version containing iterable routes that can be consumed by the adapter.
      *
-     * @param string $version
+     * @param string|null $version
      *
-     * @return mixed
+     * @return iterable
      */
-    public function getIterableRoutes($version = null);
+    public function getIterableRoutes(string $version = null) : iterable;
 
     /**
      * Set the routes on the adapter.
@@ -64,14 +66,20 @@ interface Adapter
      *
      * @return void
      */
-    public function setRoutes(array $routes);
+    public function setRoutes(array $routes) : void;
 
     /**
      * Prepare a route for serialization.
      *
-     * @param mixed $route
+     * @param Route $route
      *
-     * @return mixed
+     * @return void
      */
-    public function prepareRouteForSerialization($route);
+    public function prepareRouteForSerialization(Route $route) : void;
+
+    /**
+     * @param Route $route
+     * @return array
+     */
+    public function gatherRouteMiddlewares(Route $route) : array;
 }

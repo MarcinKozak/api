@@ -16,6 +16,6 @@ class UnauthenticatedTest extends BaseTestCase
         $container = new Container;
         $container['api.auth'] = $auth;
 
-        $this->assertFalse((new Unauthenticated)->match($container));
+        self::assertFalse((new Unauthenticated)->match($container));
     }
 }

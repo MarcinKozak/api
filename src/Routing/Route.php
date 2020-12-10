@@ -2,18 +2,20 @@
 
 namespace Dingo\Api\Routing;
 
+use Dingo\Api\Contract\Http\RateLimit\Throttle;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Container\Container;
 use Dingo\Api\Contract\Routing\Adapter;
+use Illuminate\Routing\Route as BaseRoute;
 
-class Route extends \Illuminate\Routing\Route
+class Route extends BaseRoute
 {
     /**
      * Routing adapter instance.
      *
-     * @var \Dingo\Api\Contract\Routing\Adapter
+     * @var Adapter
      */
     protected $adapter;
 
@@ -55,7 +57,7 @@ class Route extends \Illuminate\Routing\Route
     /**
      * The throttle used by the route, takes precedence over rate limits.
      *
-     * @return string|\Dingo\Api\Contract\Http\RateLimit\Throttle
+     * @return string|Throttle
      */
     protected $throttle;
 
@@ -65,6 +67,13 @@ class Route extends \Illuminate\Routing\Route
      * @var string
      */
     protected $controllerClass;
+
+    /**
+     * Controller method name.
+     *
+     * @var string
+     */
+    protected $controllerMethod;
 
     /**
      * Indicates if the request is conditional.
@@ -79,21 +88,19 @@ class Route extends \Illuminate\Routing\Route
      * @var array
      */
     protected $middleware;
-    private $route;
 
     /**
      * Create a new route instance.
      *
-     * @param \Dingo\Api\Contract\Routing\Adapter $adapter
-     * @param \Illuminate\Container\Container     $container
-     * @param \Illuminate\Http\Request            $request
-     * @param array|\Illuminate\Routing\Route     $route
+     * @param Adapter $adapter
+     * @param Container $container
+     * @param Request $request
+     * @param BaseRoute $route
      */
-    public function __construct(Adapter $adapter, Container $container, Request $request, $route)
+    public function __construct(Adapter $adapter, Container $container, Request $request, BaseRoute $route)
     {
         $this->adapter = $adapter;
         $this->container = $container;
-        $this->route = $route;
 
         $this->setupRouteProperties($request, $route);
 
@@ -104,22 +111,22 @@ class Route extends \Illuminate\Routing\Route
      * Setup the route properties.
      *
      * @param Request $request
-     * @param         $route
+     * @param BaseRoute $route
      *
      * @return void
      */
-    protected function setupRouteProperties(Request $request, $route)
+    protected function setupRouteProperties(Request $request, BaseRoute $route) : void
     {
         [$this->uri, $this->methods, $this->action] = $this->adapter->getRouteProperties($route, $request);
 
-        $this->versions = Arr::pull($this->action, 'version');
-        $this->conditionalRequest = Arr::pull($this->action, 'conditionalRequest', true);
-        $this->middleware = (array) Arr::pull($this->action, 'middleware', []);
-        $this->throttle = Arr::pull($this->action, 'throttle');
-        $this->scopes = Arr::pull($this->action, 'scopes', []);
-        $this->authenticationProviders = Arr::pull($this->action, 'providers', []);
-        $this->rateLimit = Arr::pull($this->action, 'limit', 0);
-        $this->rateExpiration = Arr::pull($this->action, 'expires', 0);
+        $this->versions = $this->pullAction('version');
+        $this->conditionalRequest = $this->pullAction('conditionalRequest', true);
+        $this->middleware = (array) $this->pullAction('middleware', []);
+        $this->throttle = $this->pullAction('throttle');
+        $this->scopes = $this->pullAction('scopes', []);
+        $this->authenticationProviders = $this->pullAction('providers', []);
+        $this->rateLimit = $this->pullAction('limit', 0);
+        $this->rateExpiration = $this->pullAction('expires', 0);
 
         // Now that the default route properties have been set we'll go ahead and merge
         // any controller properties to fully configure the route.
@@ -133,9 +140,18 @@ class Route extends \Illuminate\Routing\Route
     }
 
     /**
+     * @param string $key
+     * @param null $default
+     * @return mixed
+     */
+    private function pullAction(string $key, $default = null) {
+        return Arr::pull($this->action, $key, $default);
+    }
+
+    /**
      * Merge the controller properties onto the route properties.
      */
-    protected function mergeControllerProperties()
+    protected function mergeControllerProperties() : void
     {
         if (isset($this->action['uses']) && is_string($this->action['uses']) && Str::contains($this->action['uses'],
                 '@')) {
@@ -148,17 +164,17 @@ class Route extends \Illuminate\Routing\Route
             return;
         }
 
-        $controller = $this->getControllerInstance();
+        if($controller = $this->getControllerInstance()) {
+            $controllerMiddleware = [];
 
-        $controllerMiddleware = [];
+            if (method_exists($controller, 'getMiddleware')) {
+                $controllerMiddleware = $controller->getMiddleware();
+            } elseif (method_exists($controller, 'getMiddlewareForMethod')) {
+                $controllerMiddleware = $controller->getMiddlewareForMethod($this->controllerMethod);
+            }
 
-        if (method_exists($controller, 'getMiddleware')) {
-            $controllerMiddleware = $controller->getMiddleware();
-        } elseif (method_exists($controller, 'getMiddlewareForMethod')) {
-            $controllerMiddleware = $controller->getMiddlewareForMethod($this->controllerMethod);
+            $this->middleware = array_merge($this->middleware, $controllerMiddleware);
         }
-
-        $this->middleware = array_merge($this->middleware, $controllerMiddleware);
 
         if ($property = $this->findControllerPropertyOptions('throttles')) {
             $this->throttle = $property['class'];
@@ -185,19 +201,23 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return array
      */
-    protected function findControllerPropertyOptions($name)
+    protected function findControllerPropertyOptions(string $name) : array
     {
         $properties = [];
 
-        foreach ($this->getControllerInstance()->{'get'.ucfirst($name)}() as $property) {
-            if (isset($property['options']) && ! $this->optionsApplyToControllerMethod($property['options'])) {
-                continue;
+        if($controller = $this->getControllerInstance()) {
+            foreach ($controller->{'get'.ucfirst($name)}() as $property) {
+                if (isset($property['options']) && ! $this->optionsApplyToControllerMethod($property['options'])) {
+                    continue;
+                }
+
+                unset($property['options']);
+
+                $properties = array_merge_recursive($properties, $property);
             }
-
-            unset($property['options']);
-
-            $properties = array_merge_recursive($properties, $property);
         }
+
+
 
         return $properties;
     }
@@ -209,16 +229,21 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return bool
      */
-    protected function optionsApplyToControllerMethod(array $options)
+    protected function optionsApplyToControllerMethod(array $options) : bool
     {
         if (empty($options)) {
             return true;
-        } elseif (isset($options['only']) && in_array($this->controllerMethod,
-                $this->explodeOnPipes($options['only']))) {
+        }
+
+        if (isset($options['only']) && in_array($this->controllerMethod, $this->explodeOnPipes($options['only']), true)) {
             return true;
-        } elseif (isset($options['except'])) {
-            return ! in_array($this->controllerMethod, $this->explodeOnPipes($options['except']));
-        } elseif (in_array($this->controllerMethod, $this->explodeOnPipes($options))) {
+        }
+
+        if (isset($options['except'])) {
+            return !in_array($this->controllerMethod, $this->explodeOnPipes($options['except']), true);
+        }
+
+        if (in_array($this->controllerMethod, $this->explodeOnPipes($options), true)) {
             return true;
         }
 
@@ -232,7 +257,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return array
      */
-    protected function explodeOnPipes($value)
+    protected function explodeOnPipes($value) : array
     {
         return is_string($value) ? explode('|', $value) : $value;
     }
@@ -242,7 +267,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return bool
      */
-    protected function controllerUsesHelpersTrait()
+    protected function controllerUsesHelpersTrait() : bool
     {
         if (! $controller = $this->getControllerInstance()) {
             return false;
@@ -251,12 +276,12 @@ class Route extends \Illuminate\Routing\Route
         $traits = [];
 
         do {
-            $traits = array_merge(class_uses($controller, false), $traits);
+            if($uses = class_uses($controller, false)) {
+                $traits[] = $uses;
+            }
         } while ($controller = get_parent_class($controller));
 
-        foreach ($traits as $trait => $same) {
-            $traits = array_merge(class_uses($trait, false), $traits);
-        }
+        $traits = array_merge(...$traits);
 
         return isset($traits[Helpers::class]);
     }
@@ -291,10 +316,12 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return bool
      */
-    public function isProtected()
+    public function isProtected() : bool
     {
-        if (isset($this->middleware['api.auth']) || in_array('api.auth', $this->middleware)) {
-            if ($this->controller && isset($this->middleware['api.auth'])) {
+        $authRegistered = isset($this->middleware['api.auth']);
+
+        if ($authRegistered || in_array('api.auth', $this->middleware, true)) {
+            if ($this->controller && $authRegistered) {
                 return $this->optionsApplyToControllerMethod($this->middleware['api.auth']);
             }
 
@@ -309,7 +336,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return bool
      */
-    public function hasThrottle()
+    public function hasThrottle() : array
     {
         return ! is_null($this->throttle);
     }
@@ -339,7 +366,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return array
      */
-    public function scopes()
+    public function scopes() : array
     {
         return $this->scopes;
     }
@@ -349,7 +376,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return array
      */
-    public function getScopes()
+    public function getScopes() : array
     {
         return $this->scopes;
     }
@@ -359,7 +386,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return bool
      */
-    public function scopeStrict()
+    public function scopeStrict() : bool
     {
         return Arr::get($this->action, 'scopeStrict', false);
     }
@@ -369,7 +396,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return array
      */
-    public function authenticationProviders()
+    public function authenticationProviders() : array
     {
         return $this->authenticationProviders;
     }
@@ -379,7 +406,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return array
      */
-    public function getAuthenticationProviders()
+    public function getAuthenticationProviders() : array
     {
         return $this->authenticationProviders;
     }
@@ -389,7 +416,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return int
      */
-    public function rateLimit()
+    public function rateLimit() : int
     {
         return $this->rateLimit;
     }
@@ -399,7 +426,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return int
      */
-    public function getRateLimit()
+    public function getRateLimit() : int
     {
         return $this->rateLimit;
     }
@@ -409,7 +436,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return int
      */
-    public function rateLimitExpiration()
+    public function rateLimitExpiration() : int
     {
         return $this->rateExpiration;
     }
@@ -419,7 +446,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return int
      */
-    public function getRateLimitExpiration()
+    public function getRateLimitExpiration() : int
     {
         return $this->rateExpiration;
     }
@@ -427,9 +454,9 @@ class Route extends \Illuminate\Routing\Route
     /**
      * Get the name of the route.
      *
-     * @return string
+     * @return string|null
      */
-    public function getName()
+    public function getName() : ?string
     {
         return Arr::get($this->action, 'as', null);
     }
@@ -439,7 +466,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return bool
      */
-    public function requestIsConditional()
+    public function requestIsConditional() : bool
     {
         return $this->conditionalRequest === true;
     }
@@ -449,7 +476,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return array
      */
-    public function getVersions()
+    public function getVersions() : array
     {
         return $this->versions;
     }
@@ -459,7 +486,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return array
      */
-    public function versions()
+    public function versions() : array
     {
         return $this->getVersions();
     }
@@ -469,39 +496,19 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return string
      */
-    public function getPath()
+    public function getPath() : string
     {
         return $this->uri();
     }
 
     /**
-     * Get the URI associated with the route.
-     *
-     * @return string
-     */
-    public function uri()
-    {
-        return $this->uri;
-    }
-
-    /**
      * Get the HTTP verbs the route responds to.
      *
      * @return array
      */
-    public function getMethods()
+    public function getMethods() : array
     {
         return $this->methods();
-    }
-
-    /**
-     * Get the HTTP verbs the route responds to.
-     *
-     * @return array
-     */
-    public function methods()
-    {
-        return $this->methods;
     }
 
     /**
@@ -509,7 +516,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return bool
      */
-    public function httpOnly()
+    public function httpOnly() : bool
     {
         return in_array('http', $this->action, true)
             || (array_key_exists('http', $this->action) && $this->action['http']);
@@ -520,7 +527,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return bool
      */
-    public function httpsOnly()
+    public function httpsOnly() : bool
     {
         return $this->secure();
     }
@@ -530,7 +537,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return bool
      */
-    public function secure()
+    public function secure() : bool
     {
         return in_array('https', $this->action, true)
             || (array_key_exists('https', $this->action) && $this->action['https']);
@@ -541,7 +548,7 @@ class Route extends \Illuminate\Routing\Route
      *
      * @return array
      */
-    public function getMiddleware()
+    public function getMiddleware() : array
     {
         return $this->middleware;
     }

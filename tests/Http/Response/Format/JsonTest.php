@@ -43,28 +43,28 @@ class JsonTest extends BaseTestCase
     {
         $response = (new Response(new EloquentModelStub))->morph();
 
-        $this->assertSame('{"foo_bar":{"foo":"bar"}}', $response->getContent());
+        self::assertSame('{"foo_bar":{"foo":"bar"}}', $response->getContent());
     }
 
     public function testMorphingEloquentCollection()
     {
         $response = (new Response(new Collection([new EloquentModelStub, new EloquentModelStub])))->morph();
 
-        $this->assertSame('{"foo_bars":[{"foo":"bar"},{"foo":"bar"}]}', $response->getContent());
+        self::assertSame('{"foo_bars":[{"foo":"bar"},{"foo":"bar"}]}', $response->getContent());
     }
 
     public function testMorphingEmptyEloquentCollection()
     {
         $response = (new Response(new Collection))->morph();
 
-        $this->assertSame('[]', $response->getContent());
+        self::assertSame('[]', $response->getContent());
     }
 
     public function testMorphingString()
     {
         $response = (new Response('foo'))->morph();
 
-        $this->assertSame('foo', $response->getContent());
+        self::assertSame('foo', $response->getContent());
     }
 
     public function testMorphingArray()
@@ -73,12 +73,12 @@ class JsonTest extends BaseTestCase
 
         $response = (new Response(['foo' => 'bar', 'baz' => $messages]))->morph();
 
-        $this->assertSame('{"foo":"bar","baz":{"foo":["bar"]}}', $response->getContent());
+        self::assertSame('{"foo":"bar","baz":{"foo":["bar"]}}', $response->getContent());
     }
 
     public function testMorphingUnknownType()
     {
-        $this->assertSame(1, (new Response(1))->morph()->getContent());
+        self::assertSame(1, (new Response(1))->morph()->getContent());
     }
 
     public function testMorphingEloquentModelWithCamelCasing()
@@ -87,7 +87,7 @@ class JsonTest extends BaseTestCase
 
         $response = (new Response(new EloquentModelStub))->morph();
 
-        $this->assertSame('{"fooBar":{"foo":"bar"}}', $response->getContent());
+        self::assertSame('{"fooBar":{"foo":"bar"}}', $response->getContent());
     }
 
     public function testMorphingEloquentCollectionWithCamelCasing()
@@ -96,7 +96,7 @@ class JsonTest extends BaseTestCase
 
         $response = (new Response(new Collection([new EloquentModelStub, new EloquentModelStub])))->morph();
 
-        $this->assertSame('{"fooBars":[{"foo":"bar"},{"foo":"bar"}]}', $response->getContent());
+        self::assertSame('{"fooBars":[{"foo":"bar"},{"foo":"bar"}]}', $response->getContent());
     }
 
     public function testMorphingArrayWithTwoSpacesPrettyPrintIndent()
@@ -115,7 +115,7 @@ class JsonTest extends BaseTestCase
 
         $response = (new Response($array))->morph();
 
-        $this->assertSame($this->getExpectedPrettyPrintedJson(__FUNCTION__), $response->getContent());
+        self::assertSame($this->getExpectedPrettyPrintedJson(__FUNCTION__), $response->getContent());
     }
 
     public function testMorphingArrayWithFourSpacesPrettyPrintIndent()
@@ -134,7 +134,7 @@ class JsonTest extends BaseTestCase
 
         $response = (new Response($array))->morph();
 
-        $this->assertSame($this->getExpectedPrettyPrintedJson(__FUNCTION__), $response->getContent());
+        self::assertSame($this->getExpectedPrettyPrintedJson(__FUNCTION__), $response->getContent());
     }
 
     public function testMorphingArrayWithEightSpacesPrettyPrintIndent()
@@ -153,7 +153,7 @@ class JsonTest extends BaseTestCase
 
         $response = (new Response($array))->morph();
 
-        $this->assertSame($this->getExpectedPrettyPrintedJson(__FUNCTION__), $response->getContent());
+        self::assertSame($this->getExpectedPrettyPrintedJson(__FUNCTION__), $response->getContent());
     }
 
     public function testMorphingArrayWithOneTabPrettyPrintIndent()
@@ -170,6 +170,6 @@ class JsonTest extends BaseTestCase
         $array = ['foo' => 'bar', 'baz' => ['foobar' => [42, 0.00042, '', null]]];
         $response = (new Response($array))->morph();
 
-        $this->assertSame($this->getExpectedPrettyPrintedJson(__FUNCTION__), $response->getContent());
+        self::assertSame($this->getExpectedPrettyPrintedJson(__FUNCTION__), $response->getContent());
     }
 }

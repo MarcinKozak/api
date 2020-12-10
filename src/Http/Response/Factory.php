@@ -3,29 +3,26 @@
 namespace Dingo\Api\Http\Response;
 
 use Closure;
+use Dingo\Api\Transformer\Binding;
 use ErrorException;
 use Illuminate\Support\Str;
 use Dingo\Api\Http\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\Paginator;
 use Dingo\Api\Transformer\Factory as TransformerFactory;
+use stdClass;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class Factory
 {
     /**
-     * Transformer factory instance.
-     *
-     * @var \Dingo\Api\Transformer\Factory
+     * @var TransformerFactory
      */
     protected $transformer;
 
     /**
-     * Create a new response factory instance.
-     *
-     * @param \Dingo\Api\Transformer\Factory $transformer
-     *
-     * @return void
+     * Factory constructor.
+     * @param TransformerFactory $transformer
      */
     public function __construct(TransformerFactory $transformer)
     {
@@ -33,16 +30,13 @@ class Factory
     }
 
     /**
-     * Respond with a created response and associate a location if provided.
-     *
-     * @param null|string $location
-     *
-     * @return \Dingo\Api\Http\Response
+     * @param string|null $location
+     * @param null $content
+     * @return Response
      */
-    public function created($location = null, $content = null)
+    public function created(string $location = null, $content = null) : Response
     {
-        $response = new Response($content);
-        $response->setStatusCode(201);
+        $response = new Response($content, 201);
 
         if (! is_null($location)) {
             $response->header('Location', $location);
@@ -52,17 +46,13 @@ class Factory
     }
 
     /**
-     * Respond with an accepted response and associate a location and/or content if provided.
-     *
-     * @param null|string $location
-     * @param mixed       $content
-     *
-     * @return \Dingo\Api\Http\Response
+     * @param string|null $location
+     * @param null $content
+     * @return Response
      */
-    public function accepted($location = null, $content = null)
+    public function accepted(string $location = null, $content = null) : Response
     {
-        $response = new Response($content);
-        $response->setStatusCode(202);
+        $response = new Response($content, 202);
 
         if (! is_null($location)) {
             $response->header('Location', $location);
@@ -72,28 +62,23 @@ class Factory
     }
 
     /**
-     * Respond with a no content response.
-     *
-     * @return \Dingo\Api\Http\Response
+     * @return Response
      */
-    public function noContent()
+    public function noContent() : Response
     {
-        $response = new Response(null);
-
-        return $response->setStatusCode(204);
+        return new Response(null, 204);
     }
 
     /**
      * Bind a collection to a transformer and start building a response.
      *
-     * @param \Illuminate\Support\Collection $collection
-     * @param string|callable|object         $transformer
-     * @param array|\Closure                 $parameters
-     * @param \Closure|null                  $after
-     *
-     * @return \Dingo\Api\Http\Response
+     * @param Collection $collection
+     * @param string|callable|object $transformer
+     * @param array|Closure $parameters
+     * @param Closure|null $after
+     * @return Response
      */
-    public function collection(Collection $collection, $transformer = null, $parameters = [], Closure $after = null)
+    public function collection(Collection $collection, $transformer = null, $parameters = [], Closure $after = null) : Response
     {
         if ($collection->isEmpty()) {
             $class = get_class($collection);
@@ -101,16 +86,7 @@ class Factory
             $class = get_class($collection->first());
         }
 
-        if ($parameters instanceof \Closure) {
-            $after = $parameters;
-            $parameters = [];
-        }
-
-        if ($transformer !== null) {
-            $binding = $this->transformer->register($class, $transformer, $parameters, $after);
-        } else {
-            $binding = $this->transformer->getBinding($collection);
-        }
+        $binding = $this->createBinding($class, $collection, $transformer, $parameters, $after);
 
         return new Response($collection, 200, [], $binding);
     }
@@ -118,34 +94,39 @@ class Factory
     /**
      * Bind an item to a transformer and start building a response.
      *
-     * @param object                         $item
-     * @param null|string|callable|object    $transformer
-     * @param array                          $parameters
-     * @param \Closure                       $after
-     *
-     * @return \Dingo\Api\Http\Response
+     * @param object $item
+     * @param null $transformer
+     * @param array $parameters
+     * @param Closure|null $after
+     * @return Response
      */
-    public function item($item, $transformer = null, $parameters = [], Closure $after = null)
+    public function item(object $item, $transformer = null, $parameters = [], Closure $after = null)
     {
-        // Check for $item being null
-        if (! is_null($item)) {
-            $class = get_class($item);
-        } else {
-            $class = \StdClass::class;
-        }
+        $class      = $item === null ? stdClass::class : get_class($item);
+        $binding    = $this->createBinding($class, $item, $transformer, $parameters, $after);
 
-        if ($parameters instanceof \Closure) {
+        return new Response($item, 200, [], $binding);
+    }
+
+    /**
+     * @param string $class
+     * @param object $resource
+     * @param null $transformer
+     * @param array $parameters
+     * @param Closure|null $after
+     * @return Binding
+     */
+    private function createBinding(string $class, object $resource, $transformer = null, $parameters = [], Closure $after = null) : Binding {
+        if ($parameters instanceof Closure) {
             $after = $parameters;
             $parameters = [];
         }
 
         if ($transformer !== null) {
-            $binding = $this->transformer->register($class, $transformer, $parameters, $after);
-        } else {
-            $binding = $this->transformer->getBinding($item);
+            return $this->transformer->register($class, $transformer, $parameters, $after);
         }
 
-        return new Response($item, 200, [], $binding);
+        return $this->transformer->getBinding($resource);
     }
 
     /**
@@ -160,7 +141,7 @@ class Factory
      */
     public function array(array $array, $transformer = null, $parameters = [], Closure $after = null)
     {
-        if ($parameters instanceof \Closure) {
+        if ($parameters instanceof Closure) {
             $after = $parameters;
             $parameters = [];
         }
@@ -186,9 +167,9 @@ class Factory
      * @param \Illuminate\Contracts\Pagination\Paginator $paginator
      * @param null|string|callable|object                $transformer
      * @param array                                      $parameters
-     * @param \Closure                                   $after
+     * @param Closure $after
      *
-     * @return \Dingo\Api\Http\Response
+     * @return Response
      */
     public function paginator(Paginator $paginator, $transformer = null, array $parameters = [], Closure $after = null)
     {

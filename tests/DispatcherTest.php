@@ -24,6 +24,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Request as RequestFacade;
 use Mockery as m;
 use Symfony\Component\HttpKernel\Exception\GoneHttpException;
+use Illuminate\Database\Eloquent\Model;
 
 class DispatcherTest extends BaseTestCase
 {
@@ -85,7 +86,7 @@ class DispatcherTest extends BaseTestCase
         Response::setTransformer($this->transformerFactory);
     }
 
-    public function testInternalRequests()
+    public function testInternalRequests(): void
     {
         $this->router->version('v1', function () {
             $this->router->get('test', function () {
@@ -109,14 +110,14 @@ class DispatcherTest extends BaseTestCase
             });
         });
 
-        $this->assertSame('foo', $this->dispatcher->get('test'));
-        $this->assertSame('bar', $this->dispatcher->post('test'));
-        $this->assertSame('baz', $this->dispatcher->put('test'));
-        $this->assertSame('yin', $this->dispatcher->patch('test'));
-        $this->assertSame('yang', $this->dispatcher->delete('test'));
+        self::assertSame('foo', $this->dispatcher->get('test'));
+        self::assertSame('bar', $this->dispatcher->post('test'));
+        self::assertSame('baz', $this->dispatcher->put('test'));
+        self::assertSame('yin', $this->dispatcher->patch('test'));
+        self::assertSame('yang', $this->dispatcher->delete('test'));
     }
 
-    public function testInternalRequestWithVersionAndParameters()
+    public function testInternalRequestWithVersionAndParameters(): void
     {
         $this->router->version('v1', function () {
             $this->router->get('test', function () {
@@ -124,10 +125,10 @@ class DispatcherTest extends BaseTestCase
             });
         });
 
-        $this->assertSame('test', $this->dispatcher->version('v1')->with(['foo' => 'bar'])->get('test'));
+        self::assertSame('test', $this->dispatcher->version('v1')->with(['foo' => 'bar'])->get('test'));
     }
 
-    public function testInternalRequestWithPrefix()
+    public function testInternalRequestWithPrefix(): void
     {
         $this->router->version('v1', ['prefix' => 'baz'], function () {
             $this->router->get('test', function () {
@@ -135,14 +136,14 @@ class DispatcherTest extends BaseTestCase
             });
         });
 
-        $this->assertSame('test', $this->dispatcher->get('baz/test'));
+        self::assertSame('test', $this->dispatcher->get('baz/test'));
 
         $this->dispatcher->setPrefix('baz');
 
-        $this->assertSame('test', $this->dispatcher->get('test'));
+        self::assertSame('test', $this->dispatcher->get('test'));
     }
 
-    public function testInternalRequestWithDomain()
+    public function testInternalRequestWithDomain(): void
     {
         $this->router->version('v1', ['domain' => 'foo.bar'], function () {
             $this->router->get('test', function () {
@@ -150,14 +151,14 @@ class DispatcherTest extends BaseTestCase
             });
         });
 
-        $this->assertSame('test', $this->dispatcher->get('http://foo.bar/test'));
+        self::assertSame('test', $this->dispatcher->get('http://foo.bar/test'));
 
         $this->dispatcher->setDefaultDomain('foo.bar');
 
-        $this->assertSame('test', $this->dispatcher->get('test'));
+        self::assertSame('test', $this->dispatcher->get('test'));
     }
 
-    public function testInternalRequestThrowsExceptionWhenResponseIsNotOkay()
+    public function testInternalRequestThrowsExceptionWhenResponseIsNotOkay(): void
     {
         $this->expectException(InternalHttpException::class);
 
@@ -170,7 +171,7 @@ class DispatcherTest extends BaseTestCase
         $this->dispatcher->get('test');
     }
 
-    public function testInternalExceptionContainsResponseObject()
+    public function testInternalExceptionContainsResponseObject(): void
     {
         $this->router->version('v1', function () {
             $this->router->get('test', function () {
@@ -181,12 +182,12 @@ class DispatcherTest extends BaseTestCase
         try {
             $this->dispatcher->get('test');
         } catch (InternalHttpException $exception) {
-            $this->assertInstanceOf(\Illuminate\Http\Response::class, $exception->getResponse());
-            $this->assertSame('test', $exception->getResponse()->getContent());
+            self::assertInstanceOf(\Illuminate\Http\Response::class, $exception->getResponse());
+            self::assertSame('test', $exception->getResponse()->getContent());
         }
     }
 
-    public function testThrowingHttpExceptionFallsThroughRouter()
+    public function testThrowingHttpExceptionFallsThroughRouter(): void
     {
         $this->router->version('v1', function () {
             $this->router->get('test', function () {
@@ -202,23 +203,23 @@ class DispatcherTest extends BaseTestCase
             $passed = true;
         }
 
-        $this->assertTrue($passed);
+        self::assertTrue($passed);
     }
 
-    public function testPretendingToBeUserForSingleRequest()
+    public function testPretendingToBeUserForSingleRequest(): void
     {
-        $user = m::mock('Illuminate\Database\Eloquent\Model');
+        $user = m::mock(Model::class);
 
         $this->router->version('v1', function () use ($user) {
             $this->router->get('test', function () use ($user) {
-                $this->assertSame($user, $this->auth->user());
+                self::assertSame($user, $this->auth->user());
             });
         });
 
         $this->dispatcher->be($user)->once()->get('test');
     }
 
-    public function testInternalRequestWithMultipleVersionsCallsCorrectVersion()
+    public function testInternalRequestWithMultipleVersionsCallsCorrectVersion(): void
     {
         $this->router->version('v1', function () {
             $this->router->get('foo', function () {
@@ -232,12 +233,12 @@ class DispatcherTest extends BaseTestCase
             });
         });
 
-        $this->assertSame('foo', $this->dispatcher->version('v1')->get('foo'));
-        $this->assertSame('bar', $this->dispatcher->version('v2')->get('foo'));
-        $this->assertSame('bar', $this->dispatcher->version('v3')->get('foo'));
+        self::assertSame('foo', $this->dispatcher->version('v1')->get('foo'));
+        self::assertSame('bar', $this->dispatcher->version('v2')->get('foo'));
+        self::assertSame('bar', $this->dispatcher->version('v3')->get('foo'));
     }
 
-    public function testInternalRequestWithNestedInternalRequest()
+    public function testInternalRequestWithNestedInternalRequest(): void
     {
         $this->router->version('v1', function () {
             $this->router->get('foo', function () {
@@ -257,64 +258,64 @@ class DispatcherTest extends BaseTestCase
             });
         });
 
-        $this->assertSame('foobarbaz', $this->dispatcher->get('foo'));
+        self::assertSame('foobarbaz', $this->dispatcher->get('foo'));
     }
 
-    public function testRequestStackIsMaintained()
+    public function testRequestStackIsMaintained(): void
     {
         $this->router->version('v1', ['prefix' => 'api'], function () {
             $this->router->post('foo', function () {
-                $this->assertSame('bar', $this->router->getCurrentRequest()->input('foo'));
+                self::assertSame('bar', $this->router->getCurrentRequest()->input('foo'));
                 $this->dispatcher->with(['foo' => 'baz'])->post('api/bar');
-                $this->assertSame('bar', $this->router->getCurrentRequest()->input('foo'));
+                self::assertSame('bar', $this->router->getCurrentRequest()->input('foo'));
             });
 
             $this->router->post('bar', function () {
-                $this->assertSame('baz', $this->router->getCurrentRequest()->input('foo'));
+                self::assertSame('baz', $this->router->getCurrentRequest()->input('foo'));
                 $this->dispatcher->with(['foo' => 'bazinga'])->post('api/baz');
-                $this->assertSame('baz', $this->router->getCurrentRequest()->input('foo'));
+                self::assertSame('baz', $this->router->getCurrentRequest()->input('foo'));
             });
 
             $this->router->post('baz', function () {
-                $this->assertSame('bazinga', $this->router->getCurrentRequest()->input('foo'));
+                self::assertSame('bazinga', $this->router->getCurrentRequest()->input('foo'));
             });
         });
 
         $this->dispatcher->with(['foo' => 'bar'])->post('api/foo');
     }
 
-    public function testRouteStackIsMaintained()
+    public function testRouteStackIsMaintained(): void
     {
         $this->router->version('v1', function () {
             $this->router->post('foo', ['as' => 'foo', function () {
-                $this->assertSame('foo', $this->router->getCurrentRoute()->getName());
+                self::assertSame('foo', $this->router->getCurrentRoute()->getName());
                 $this->dispatcher->post('bar');
-                $this->assertSame('foo', $this->router->getCurrentRoute()->getName());
+                self::assertSame('foo', $this->router->getCurrentRoute()->getName());
             }]);
 
             $this->router->post('bar', ['as' => 'bar', function () {
-                $this->assertSame('bar', $this->router->getCurrentRoute()->getName());
+                self::assertSame('bar', $this->router->getCurrentRoute()->getName());
                 $this->dispatcher->post('baz');
-                $this->assertSame('bar', $this->router->getCurrentRoute()->getName());
+                self::assertSame('bar', $this->router->getCurrentRoute()->getName());
             }]);
 
             $this->router->post('baz', ['as' => 'bazinga', function () {
-                $this->assertSame('bazinga', $this->router->getCurrentRoute()->getName());
+                self::assertSame('bazinga', $this->router->getCurrentRoute()->getName());
             }]);
         });
 
         $this->dispatcher->post('foo');
     }
 
-    public function testSendingJsonPayload()
+    public function testSendingJsonPayload(): void
     {
         $this->router->version('v1', function () {
             $this->router->post('foo', function () {
-                $this->assertSame('jason', $this->router->getCurrentRequest()->json('username'));
+                self::assertSame('jason', $this->router->getCurrentRequest()->json('username'));
             });
 
             $this->router->post('bar', function () {
-                $this->assertSame('mat', $this->router->getCurrentRequest()->json('username'));
+                self::assertSame('mat', $this->router->getCurrentRequest()->json('username'));
             });
         });
 
@@ -322,7 +323,7 @@ class DispatcherTest extends BaseTestCase
         $this->dispatcher->json('{"username":"mat"}')->post('bar');
     }
 
-    public function testInternalRequestsToDifferentDomains()
+    public function testInternalRequestsToDifferentDomains(): void
     {
         $this->router->version(['v1', 'v2'], ['domain' => 'foo.bar'], function () {
             $this->router->get('foo', function () {
@@ -342,12 +343,12 @@ class DispatcherTest extends BaseTestCase
             });
         });
 
-        $this->assertSame('v1 and v2 on domain foo.bar', $this->dispatcher->on('foo.bar')->version('v2')->get('foo'));
-        $this->assertSame('v1 on domain foo.baz', $this->dispatcher->on('foo.baz')->get('foo'));
-        $this->assertSame('v2 on domain foo.baz', $this->dispatcher->on('foo.baz')->version('v2')->get('foo'));
+        self::assertSame('v1 and v2 on domain foo.bar', $this->dispatcher->on('foo.bar')->version('v2')->get('foo'));
+        self::assertSame('v1 on domain foo.baz', $this->dispatcher->on('foo.baz')->get('foo'));
+        self::assertSame('v2 on domain foo.baz', $this->dispatcher->on('foo.baz')->version('v2')->get('foo'));
     }
 
-    public function testRequestingRawResponse()
+    public function testRequestingRawResponse(): void
     {
         $this->router->version('v1', function () {
             $this->router->get('foo', function () {
@@ -357,12 +358,12 @@ class DispatcherTest extends BaseTestCase
 
         $response = $this->dispatcher->raw()->get('foo');
 
-        $this->assertInstanceOf(Response::class, $response);
-        $this->assertSame('{"foo":"bar"}', $response->getContent());
-        $this->assertSame(['foo' => 'bar'], $response->getOriginalContent());
+        self::assertInstanceOf(Response::class, $response);
+        self::assertSame('{"foo":"bar"}', $response->getContent());
+        self::assertSame(['foo' => 'bar'], $response->getOriginalContent());
     }
 
-    public function testRequestingRawResponseWithTransformers()
+    public function testRequestingRawResponseWithTransformers(): void
     {
         $instance = null;
 
@@ -376,12 +377,12 @@ class DispatcherTest extends BaseTestCase
 
         $response = $this->dispatcher->raw()->get('foo');
 
-        $this->assertInstanceOf(Response::class, $response);
-        $this->assertSame('{"name":"Jason"}', $response->getContent());
-        $this->assertSame($instance, $response->getOriginalContent());
+        self::assertInstanceOf(Response::class, $response);
+        self::assertSame('{"name":"Jason"}', $response->getContent());
+        self::assertSame($instance, $response->getOriginalContent());
     }
 
-    public function testUsingRequestFacadeDoesNotCacheRequestInstance()
+    public function testUsingRequestFacadeDoesNotCacheRequestInstance(): void
     {
         RequestFacade::setFacadeApplication($this->container);
 
@@ -391,15 +392,15 @@ class DispatcherTest extends BaseTestCase
             });
         });
 
-        $this->assertNull(RequestFacade::input('foo'));
+        self::assertNull(RequestFacade::input('foo'));
 
         $response = $this->dispatcher->with(['foo' => 'bar'])->get('foo');
 
-        $this->assertSame('bar', $response);
-        $this->assertNull(RequestFacade::input('foo'));
+        self::assertSame('bar', $response);
+        self::assertNull(RequestFacade::input('foo'));
     }
 
-    public function testRedirectResponseThrowsException()
+    public function testRedirectResponseThrowsException(): void
     {
         $this->router->version('v1', function () {
             $this->router->get('redirect', function () {
@@ -408,11 +409,11 @@ class DispatcherTest extends BaseTestCase
         });
 
         $response = $this->dispatcher->get('redirect');
-        $this->assertInstanceOf(RedirectResponse::class, $response);
-        $this->assertSame('redirect-test', $response->getTargetUrl());
+        self::assertInstanceOf(RedirectResponse::class, $response);
+        self::assertSame('redirect-test', $response->getTargetUrl());
     }
 
-    public function testNotOkJsonResponseThrowsException()
+    public function testNotOkJsonResponseThrowsException(): void
     {
         $this->expectException(InternalHttpException::class);
 
@@ -425,7 +426,7 @@ class DispatcherTest extends BaseTestCase
         $this->dispatcher->get('json');
     }
 
-    public function testFormRequestValidationFailureThrowsValidationException()
+    public function testFormRequestValidationFailureThrowsValidationException(): void
     {
         $this->expectException(ValidationHttpException::class);
 

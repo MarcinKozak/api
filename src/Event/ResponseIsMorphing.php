@@ -9,7 +9,7 @@ class ResponseIsMorphing
     /**
      * Response instance.
      *
-     * @var \Dingo\Api\Http\Response
+     * @var Response
      */
     public $response;
 
@@ -21,15 +21,11 @@ class ResponseIsMorphing
     public $content;
 
     /**
-     * Create a new response is morphing event. Content is passed by reference
-     * so that multiple listeners can modify content.
-     *
-     * @param \Dingo\Api\Http\Response $response
-     * @param string                   $content
-     *
-     * @return void
+     * ResponseIsMorphing constructor.
+     * @param Response $response
+     * @param string $content
      */
-    public function __construct(Response $response, &$content)
+    public function __construct(Response $response, string &$content)
     {
         $this->response = $response;
         $this->content = &$content;

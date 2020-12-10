@@ -2,7 +2,6 @@
 
 namespace Dingo\Api\Tests\Stubs;
 
-use Closure;
 use Dingo\Api\Contract\Routing\Adapter;
 use Dingo\Api\Http\Response;
 use Illuminate\Container\Container;
@@ -10,8 +9,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as IlluminateResponse;
 use Illuminate\Pipeline\Pipeline;
+use Illuminate\Routing\Route;
 use Illuminate\Routing\Route as IlluminateRoute;
 use Illuminate\Routing\RouteCollection;
+use Symfony\Component\HttpFoundation\Request as BaseRequest;
+use Symfony\Component\HttpFoundation\Response as BaseResponse;
 
 class RoutingAdapterStub implements Adapter
 {
@@ -19,7 +21,12 @@ class RoutingAdapterStub implements Adapter
 
     protected $patterns = [];
 
-    public function dispatch(Request $request, $version)
+    /**
+     * @param Request $request
+     * @param string $version
+     * @return BaseResponse
+     */
+    public function dispatch(Request $request, string $version) : BaseResponse
     {
         $routes = $this->routes[$version];
 
@@ -33,20 +40,11 @@ class RoutingAdapterStub implements Adapter
             ->send($request)
             ->through([])
             ->then(function ($request) use ($route) {
-                return $this->prepareResponse($request, $route->run($request));
+                return $this->prepareResponse($request, $route->run());
             });
     }
 
-    protected function findRouteClosure(array $action)
-    {
-        foreach ($action as $value) {
-            if ($value instanceof Closure) {
-                return $value;
-            }
-        }
-    }
-
-    protected function prepareResponse($request, $response)
+    protected function prepareResponse(BaseRequest $request, $response) : BaseResponse
     {
         if ($response instanceof IlluminateResponse) {
             $response = Response::makeFromExisting($response);
@@ -59,17 +57,17 @@ class RoutingAdapterStub implements Adapter
         return $response->prepare($request);
     }
 
-    protected function findRoute(Request $request, $routeCollection)
+    protected function findRoute(Request $request, RouteCollection $routeCollection) : Route
     {
         return $routeCollection->match($request);
     }
 
-    public function getRouteProperties($route, Request $request)
+    public function getRouteProperties($route, Request $request) : array
     {
         return [$route->uri(), (array) $request->getMethod(), $route->getAction()];
     }
 
-    public function addRoute(array $methods, array $versions, $uri, $action)
+    public function addRoute(array $methods, array $versions, string $uri, $action) : void
     {
         $this->createRouteCollections($versions);
 
@@ -79,11 +77,9 @@ class RoutingAdapterStub implements Adapter
         foreach ($versions as $version) {
             $this->routes[$version]->add($route);
         }
-
-        return $route;
     }
 
-    public function getRoutes($version = null)
+    public function getRoutes(string $version = null) : array
     {
         if (! is_null($version)) {
             return $this->routes[$version];
@@ -92,33 +88,30 @@ class RoutingAdapterStub implements Adapter
         return $this->routes;
     }
 
-    public function getIterableRoutes($version = null)
+    public function getIterableRoutes($version = null) : array
     {
         return $this->getRoutes($version);
     }
 
-    public function setRoutes(array $routes)
+    public function setRoutes(array $routes) : void
     {
         //
     }
 
-    public function prepareRouteForSerialization($route)
+    public function prepareRouteForSerialization($route) : void
     {
         //
     }
 
-    public function pattern($key, $pattern)
-    {
+    public function pattern($key, $pattern): void {
         $this->patterns[$key] = $pattern;
     }
 
-    public function getPatterns()
-    {
+    public function getPatterns(): array {
         return $this->patterns;
     }
 
-    protected function createRouteCollections(array $versions)
-    {
+    protected function createRouteCollections(array $versions): void {
         foreach ($versions as $version) {
             if (! isset($this->routes[$version])) {
                 $this->routes[$version] = new RouteCollection;
@@ -126,12 +119,16 @@ class RoutingAdapterStub implements Adapter
         }
     }
 
-    protected function addWhereClausesToRoute($route)
+    protected function addWhereClausesToRoute(Route $route) : Route
     {
-        $where = isset($route->getAction()['where']) ? $route->getAction()['where'] : [];
+        $where = $route->getAction()['where'] ?? [];
 
         $route->where(array_merge($this->patterns, $where));
 
         return $route;
+    }
+
+    public function gatherRouteMiddlewares(Route $route): array {
+        return [];
     }
 }

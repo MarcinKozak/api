@@ -15,21 +15,21 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class RouterTest extends Adapter\BaseAdapterTest
 {
-    public function getAdapterInstance()
+    public function getAdapterInstance() : RoutingAdapterStub
     {
         return $this->container->make(RoutingAdapterStub::class);
     }
 
-    public function getContainerInstance()
+    public function getContainerInstance() : Container
     {
         return new Container;
     }
 
-    public function testRouteOptionsMergeCorrectly()
+    public function testRouteOptionsMergeCorrectly() : void
     {
         $this->router->version('v1', ['scopes' => 'foo|bar'], function () {
             $this->router->get('foo', ['scopes' => ['baz'], function () {
-                $this->assertSame(
+                self::assertSame(
                     ['foo', 'bar', 'baz'],
                     $this->router->getCurrentRoute()->getScopes(),
                     'Router did not merge string based group scopes with route based array scopes.'
@@ -37,7 +37,7 @@ class RouterTest extends Adapter\BaseAdapterTest
             }]);
 
             $this->router->get('baz', function () {
-                $this->assertSame(
+                self::assertSame(
                     ['foo', 'bar'],
                     $this->router->getCurrentRoute()->getScopes(),
                     'Router did not merge string based group scopes with route.'
@@ -60,14 +60,14 @@ class RouterTest extends Adapter\BaseAdapterTest
 
         $route = $this->router->getCurrentRoute();
 
-        $this->assertSame(['baz', 'bing'], $route->scopes());
-        $this->assertSame(['foo', 'red', 'black'], $route->getAuthenticationProviders());
-        $this->assertSame(10, $route->getRateLimit());
-        $this->assertSame(20, $route->getRateLimitExpiration());
-        $this->assertInstanceOf(BasicThrottleStub::class, $route->getThrottle());
+        self::assertSame(['baz', 'bing'], $route->scopes());
+        self::assertSame(['foo', 'red', 'black'], $route->getAuthenticationProviders());
+        self::assertSame(10, $route->getRateLimit());
+        self::assertSame(20, $route->getRateLimitExpiration());
+        self::assertInstanceOf(BasicThrottleStub::class, $route->getThrottle());
     }
 
-    public function testGroupAsPrefixesRouteAs()
+    public function testGroupAsPrefixesRouteAs(): void
     {
         $this->router->version('v1', ['as' => 'api'], function ($api) {
             $api->get('users', ['as' => 'users', function () {
@@ -77,10 +77,10 @@ class RouterTest extends Adapter\BaseAdapterTest
 
         $routes = $this->router->getRoutes('v1');
 
-        $this->assertInstanceOf(Route::class, $routes->getByName('api.users'));
+        self::assertInstanceOf(Route::class, $routes->getByName('api.users'));
     }
 
-    public function testNoGroupVersionThrowsException()
+    public function testNoGroupVersionThrowsException(): void
     {
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('A version is required for an API group definition.');
@@ -90,7 +90,7 @@ class RouterTest extends Adapter\BaseAdapterTest
         });
     }
 
-    public function testMatchRoutes()
+    public function testMatchRoutes(): void
     {
         $this->router->version('v1', function ($api) {
             $api->match(['get', 'post'], 'foo', function () {
@@ -104,18 +104,18 @@ class RouterTest extends Adapter\BaseAdapterTest
             $request = $this->createRequest('foo', 'GET', ['accept' => 'application/vnd.api.v1+json'])
         );
 
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('bar', $response->getContent());
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('bar', $response->getContent());
 
         $response = $this->router->dispatch(
             $request = $this->createRequest('foo', 'POST', ['accept' => 'application/vnd.api.v1+json'])
         );
 
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('bar', $response->getContent());
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('bar', $response->getContent());
     }
 
-    public function testAnyRoutes()
+    public function testAnyRoutes(): void
     {
         $this->router->version('v1', function ($api) {
             $api->any('foo', function () {
@@ -129,32 +129,32 @@ class RouterTest extends Adapter\BaseAdapterTest
             $request = $this->createRequest('foo', 'GET', ['accept' => 'application/vnd.api.v1+json'])
         );
 
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('bar', $response->getContent());
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('bar', $response->getContent());
 
         $response = $this->router->dispatch(
             $request = $this->createRequest('foo', 'POST', ['accept' => 'application/vnd.api.v1+json'])
         );
 
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('bar', $response->getContent());
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('bar', $response->getContent());
 
         $response = $this->router->dispatch(
             $request = $this->createRequest('foo', 'PATCH', ['accept' => 'application/vnd.api.v1+json'])
         );
 
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('bar', $response->getContent());
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('bar', $response->getContent());
 
         $response = $this->router->dispatch(
             $request = $this->createRequest('foo', 'DELETE', ['accept' => 'application/vnd.api.v1+json'])
         );
 
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('bar', $response->getContent());
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('bar', $response->getContent());
     }
 
-    public function testRouterPreparesNotModifiedResponse()
+    public function testRouterPreparesNotModifiedResponse(): void
     {
         $this->router->version('v1', function () {
             $this->router->get('foo', function () {
@@ -168,16 +168,16 @@ class RouterTest extends Adapter\BaseAdapterTest
             $request = $this->createRequest('foo', 'GET', ['accept' => 'application/vnd.api.v1+json'])
         );
 
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('bar', $response->getContent());
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('bar', $response->getContent());
 
         $this->router->setConditionalRequest(true);
 
         $response = $this->router->dispatch($request);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('"'.sha1('bar').'"', $response->getETag());
-        $this->assertSame('bar', $response->getContent());
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('"'.sha1('bar').'"', $response->getETag());
+        self::assertSame('bar', $response->getContent());
 
         $request = $this->createRequest('foo', 'GET', [
             'if-none-match' => '"'.sha1('bar').'"',
@@ -186,9 +186,9 @@ class RouterTest extends Adapter\BaseAdapterTest
 
         $response = $this->router->dispatch($request);
 
-        $this->assertSame(304, $response->getStatusCode());
-        $this->assertSame('"'.sha1('bar').'"', $response->getETag());
-        $this->assertEmpty($response->getContent());
+        self::assertSame(304, $response->getStatusCode());
+        self::assertSame('"'.sha1('bar').'"', $response->getETag());
+        self::assertEmpty($response->getContent());
 
         $request = $this->createRequest('foo', 'GET', [
             'if-none-match' => '123456789',
@@ -197,12 +197,12 @@ class RouterTest extends Adapter\BaseAdapterTest
 
         $response = $this->router->dispatch($request);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('"'.sha1('bar').'"', $response->getETag());
-        $this->assertSame('bar', $response->getContent());
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('"'.sha1('bar').'"', $response->getETag());
+        self::assertSame('bar', $response->getContent());
     }
 
-    public function testRouterHandlesExistingEtag()
+    public function testRouterHandlesExistingEtag(): void
     {
         $this->router->version('v1', ['conditional_request' => true], function () {
             $this->router->get('foo', function () {
@@ -217,12 +217,12 @@ class RouterTest extends Adapter\BaseAdapterTest
             $this->createRequest('foo', 'GET', ['accept' => 'application/vnd.api.v1+json'])
         );
 
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertSame('"custom-etag"', $response->getETag());
-        $this->assertSame('bar', $response->getContent());
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('"custom-etag"', $response->getETag());
+        self::assertSame('bar', $response->getContent());
     }
 
-    public function testRouterHandlesCustomEtag()
+    public function testRouterHandlesCustomEtag(): void
     {
         $this->router->version('v1', ['conditional_request' => true], function () {
             $this->router->get('foo', function () {
@@ -240,12 +240,12 @@ class RouterTest extends Adapter\BaseAdapterTest
             ])
         );
 
-        $this->assertSame(304, $response->getStatusCode());
-        $this->assertSame('"custom-etag"', $response->getETag());
-        $this->assertEmpty($response->getContent());
+        self::assertSame(304, $response->getStatusCode());
+        self::assertSame('"custom-etag"', $response->getETag());
+        self::assertEmpty($response->getContent());
     }
 
-    public function testExceptionsAreHandledByExceptionHandler()
+    public function testExceptionsAreHandledByExceptionHandler(): void
     {
         $exception = new HttpException(400);
 
@@ -260,10 +260,10 @@ class RouterTest extends Adapter\BaseAdapterTest
 
         $request = $this->createRequest('foo', 'GET', ['accept' => 'application/vnd.api.v1+json']);
 
-        $this->assertSame('exception', $this->router->dispatch($request)->getContent(), 'Router did not delegate exception handling.');
+        self::assertSame('exception', $this->router->dispatch($request)->getContent(), 'Router did not delegate exception handling.');
     }
 
-    public function testNoAcceptHeaderUsesDefaultVersion()
+    public function testNoAcceptHeaderUsesDefaultVersion(): void
     {
         $this->router->version('v1', function () {
             $this->router->get('foo', function () {
@@ -271,10 +271,10 @@ class RouterTest extends Adapter\BaseAdapterTest
             });
         });
 
-        $this->assertSame('foo', $this->router->dispatch($this->createRequest('foo', 'GET'))->getContent(), 'Router does not default to default version.');
+        self::assertSame('foo', $this->router->dispatch($this->createRequest('foo', 'GET'))->getContent(), 'Router does not default to default version.');
     }
 
-    public function testRoutesAddedToCorrectVersions()
+    public function testRoutesAddedToCorrectVersions(): void
     {
         $this->router->version('v1', ['domain' => 'foo.bar'], function () {
             $this->router->get('foo', function () {
@@ -290,10 +290,10 @@ class RouterTest extends Adapter\BaseAdapterTest
 
         $this->createRequest('/', 'GET');
 
-        $this->assertCount(1, $this->router->getRoutes()['v1'], 'Routes were not added to the correct versions.');
+        self::assertCount(1, $this->router->getRoutes()['v1'], 'Routes were not added to the correct versions.');
     }
 
-    public function testUnsuccessfulResponseThrowsHttpException()
+    public function testUnsuccessfulResponseThrowsHttpException(): void
     {
         $this->router->version('v1', function () {
             $this->router->get('foo', function () {
@@ -305,10 +305,10 @@ class RouterTest extends Adapter\BaseAdapterTest
 
         $this->exception->shouldReceive('handle')->with(m::type(HttpException::class))->andReturn(new Http\Response('Failed!'));
 
-        $this->assertSame('Failed!', $this->router->dispatch($request)->getContent(), 'Router did not throw and handle a HttpException.');
+        self::assertSame('Failed!', $this->router->dispatch($request)->getContent(), 'Router did not throw and handle a HttpException.');
     }
 
-    public function testGroupNamespacesAreConcatenated()
+    public function testGroupNamespacesAreConcatenated(): void
     {
         $this->router->version('v1', ['namespace' => '\Dingo\Api'], function () {
             $this->router->group(['namespace' => 'Tests\Stubs'], function () {
@@ -318,10 +318,10 @@ class RouterTest extends Adapter\BaseAdapterTest
 
         $request = $this->createRequest('foo', 'GET');
 
-        $this->assertSame('foo', $this->router->dispatch($request)->getContent(), 'Router did not concatenate controller namespace correctly.');
+        self::assertSame('foo', $this->router->dispatch($request)->getContent(), 'Router did not concatenate controller namespace correctly.');
     }
 
-    public function testCurrentRouteName()
+    public function testCurrentRouteName(): void
     {
         $this->router->version('v1', function () {
             $this->router->get('foo', ['as' => 'foo', function () {
@@ -333,14 +333,14 @@ class RouterTest extends Adapter\BaseAdapterTest
 
         $this->router->dispatch($request);
 
-        $this->assertFalse($this->router->currentRouteNamed('bar'));
-        $this->assertTrue($this->router->currentRouteNamed('foo'));
-        $this->assertTrue($this->router->is('*'));
-        $this->assertFalse($this->router->is('b*'));
-        $this->assertTrue($this->router->is('b*', 'f*'));
+        self::assertFalse($this->router->currentRouteNamed('bar'));
+        self::assertTrue($this->router->currentRouteNamed('foo'));
+        self::assertTrue($this->router->is('*'));
+        self::assertFalse($this->router->is('b*'));
+        self::assertTrue($this->router->is('b*', 'f*'));
     }
 
-    public function testCurrentRouteAction()
+    public function testCurrentRouteAction(): void
     {
         $this->router->version('v1', ['namespace' => '\Dingo\Api\Tests\Stubs'], function () {
             $this->router->get('foo', 'RoutingControllerStub@getIndex');
@@ -350,14 +350,14 @@ class RouterTest extends Adapter\BaseAdapterTest
 
         $this->router->dispatch($request);
 
-        $this->assertFalse($this->router->currentRouteUses('foo'));
-        $this->assertTrue($this->router->currentRouteUses(RoutingControllerStub::class.'@getIndex'));
-        $this->assertFalse($this->router->uses('foo*'));
-        $this->assertTrue($this->router->uses('*'));
-        $this->assertTrue($this->router->uses(RoutingControllerStub::class.'@*'));
+        self::assertFalse($this->router->currentRouteUses('foo'));
+        self::assertTrue($this->router->currentRouteUses(RoutingControllerStub::class.'@getIndex'));
+        self::assertFalse($this->router->uses('foo*'));
+        self::assertTrue($this->router->uses('*'));
+        self::assertTrue($this->router->uses(RoutingControllerStub::class.'@*'));
     }
 
-    public function testRoutePatternsAreAppliedCorrectly()
+    public function testRoutePatternsAreAppliedCorrectly(): void
     {
         $adapter = $this->adapter;
         $adapter->pattern('bar', '[0-9]+');
@@ -378,7 +378,7 @@ class RouterTest extends Adapter\BaseAdapterTest
             $request = $this->createRequest('foo/abc', 'GET', ['accept' => 'application/vnd.api.v1+json'])
         );
 
-        $this->assertSame(404, $response->getStatusCode());
-        $this->assertSame('Not Found!', $response->getContent());
+        self::assertSame(404, $response->getStatusCode());
+        self::assertSame('Not Found!', $response->getContent());
     }
 }

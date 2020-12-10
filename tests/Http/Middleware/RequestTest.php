@@ -22,7 +22,7 @@ use Mockery as m;
 class RequestTest extends BaseTestCase
 {
     /**
-     * @var \Dingo\Api\Tests\Stubs\Application58Stub|\Dingo\Api\Tests\Stubs\Application6Stub|\Dingo\Api\Tests\Stubs\ApplicationStub
+     * @var \Dingo\Api\Tests\Stubs\Application58Stub|\Dingo\Api\Tests\Stubs\Application6Stub|\Dingo\Api\Tests\Stubs\ApplicationStubOld
      */
     protected $app;
     /**
@@ -72,7 +72,7 @@ class RequestTest extends BaseTestCase
         $request = Request::create('foo', 'GET');
 
         $this->middleware->handle($request, function ($handled) use ($request) {
-            $this->assertSame($handled, $request);
+            self::assertSame($handled, $request);
         });
     }
 
@@ -105,7 +105,7 @@ class RequestTest extends BaseTestCase
         $request = IlluminateRequest::create('bing/bar/foo', 'GET');
 
         $this->middleware->handle($request, function ($handled) use ($request) {
-            $this->assertSame($handled, $request);
+            self::assertSame($handled, $request);
         });
     }
 
@@ -126,7 +126,7 @@ class RequestTest extends BaseTestCase
         $request = IlluminateRequest::create('http://bing.foo.bar/baz', 'GET');
 
         $this->middleware->handle($request, function ($handled) use ($request) {
-            $this->assertSame($handled, $request);
+            self::assertSame($handled, $request);
         });
     }
 }

@@ -3,20 +3,20 @@
 namespace Dingo\Api\Transformer;
 
 use Closure;
+use Illuminate\Pagination\AbstractPaginator;
 use RuntimeException;
 use Dingo\Api\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Container\Container;
 use Dingo\Api\Contract\Transformer\Adapter;
-use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Http\Request as IlluminateRequest;
 
-class Factory
-{
+class Factory {
+
     /**
      * Illuminate container instance.
      *
-     * @var \Illuminate\Container\Container
+     * @var Container
      */
     protected $container;
 
@@ -30,20 +30,16 @@ class Factory
     /**
      * Transformation layer adapter being used to transform responses.
      *
-     * @var \Dingo\Api\Contract\Transformer\Adapter
+     * @var Adapter
      */
     protected $adapter;
 
     /**
-     * Create a new transformer factory instance.
-     *
-     * @param \Illuminate\Container\Container         $container
-     * @param \Dingo\Api\Contract\Transformer\Adapter $adapter
-     *
-     * @return void
+     * Factory constructor.
+     * @param Container $container
+     * @param Adapter $adapter
      */
-    public function __construct(Container $container, Adapter $adapter)
-    {
+    public function __construct(Container $container, Adapter $adapter) {
         $this->container = $container;
         $this->adapter = $adapter;
     }
@@ -53,13 +49,12 @@ class Factory
      *
      * @param               $class
      * @param               $resolver
-     * @param array         $parameters
-     * @param \Closure|null $after
+     * @param array $parameters
+     * @param Closure|null $after
      *
-     * @return \Dingo\Api\Transformer\Binding
+     * @return Binding
      */
-    public function register($class, $resolver, array $parameters = [], Closure $after = null)
-    {
+    public function register(string $class, Resolver $resolver, array $parameters = [], Closure $after = null): Binding {
         return $this->bindings[$class] = $this->createBinding($resolver, $parameters, $after);
     }
 
@@ -68,10 +63,9 @@ class Factory
      *
      * @param string|object $response
      *
-     * @return mixed
+     * @return array
      */
-    public function transform($response)
-    {
+    public function transform($response) : array {
         $binding = $this->getBinding($response);
 
         return $this->adapter->transform($response, $binding->resolveTransformer(), $binding, $this->getRequest());
@@ -84,8 +78,7 @@ class Factory
      *
      * @return bool
      */
-    public function transformableResponse($response)
-    {
+    public function transformableResponse($response): bool {
         return $this->transformableType($response) && $this->hasBinding($response);
     }
 
@@ -96,8 +89,7 @@ class Factory
      *
      * @return bool
      */
-    public function transformableType($value)
-    {
+    public function transformableType($value): bool {
         return is_object($value) || is_string($value);
     }
 
@@ -106,48 +98,43 @@ class Factory
      *
      * @param string|object $class
      *
-     * @throws \RuntimeException
+     * @return Binding
+     * @throws RuntimeException
      *
-     * @return \Dingo\Api\Transformer\Binding
      */
-    public function getBinding($class)
-    {
-        if ($this->isCollection($class) && ! $class->isEmpty()) {
+    public function getBinding($class): Binding {
+        if ($this->isFulfilledCollection($class)) {
+            /* @var $class Collection|AbstractPaginator */
             return $this->getBindingFromCollection($class);
         }
 
         $class = is_object($class) ? get_class($class) : $class;
 
-        if (! $this->hasBinding($class)) {
-            throw new RuntimeException('Unable to find bound transformer for "'.$class.'" class.');
+        if (!$this->hasBinding($class)) {
+            throw new RuntimeException('Unable to find bound transformer for "' . $class . '" class.');
         }
 
         return $this->bindings[$class];
     }
 
     /**
-     * Create a new binding instance.
-     *
-     * @param string|callable|object $resolver
-     * @param array                  $parameters
-     * @param \Closure               $callback
-     *
-     * @return \Dingo\Api\Transformer\Binding
+     * @param Resolver $resolver
+     * @param array $parameters
+     * @param Closure|null $callback
+     * @return Binding
      */
-    protected function createBinding($resolver, array $parameters = [], Closure $callback = null)
-    {
+    protected function createBinding(Resolver $resolver, array $parameters = [], Closure $callback = null): Binding {
         return new Binding($this->container, $resolver, $parameters, $callback);
     }
 
     /**
      * Get a registered transformer binding from a collection of items.
      *
-     * @param \Illuminate\Support\Collection $collection
+     * @param Collection|AbstractPaginator $collection
      *
-     * @return null|string|callable
+     * @return Binding
      */
-    protected function getBindingFromCollection($collection)
-    {
+    protected function getBindingFromCollection($collection) : Binding {
         return $this->getBinding($collection->first());
     }
 
@@ -158,9 +145,9 @@ class Factory
      *
      * @return bool
      */
-    protected function hasBinding($class)
-    {
-        if ($this->isCollection($class) && ! $class->isEmpty()) {
+    protected function hasBinding($class) : bool {
+        if ($this->isFulfilledCollection($class)) {
+            /* @var $class Collection|AbstractPaginator */
             $class = $class->first();
         }
 
@@ -172,13 +159,16 @@ class Factory
     /**
      * Determine if the instance is a collection.
      *
-     * @param object $instance
+     * @param object|string $instance
      *
      * @return bool
      */
-    protected function isCollection($instance)
-    {
-        return $instance instanceof Collection || $instance instanceof Paginator;
+    protected function isFulfilledCollection($instance): bool {
+        if ($instance instanceof Collection || $instance instanceof AbstractPaginator) {
+            return !$instance->isEmpty();
+        }
+
+        return false;
     }
 
     /**
@@ -186,63 +176,32 @@ class Factory
      *
      * @return array
      */
-    public function getTransformerBindings()
-    {
+    public function getTransformerBindings() : array {
         return $this->bindings;
-    }
-
-    /**
-     * Set the transformation layer at runtime.
-     *
-     * @param \Closure|\Dingo\Api\Contract\Transformer\Adapter $adapter
-     *
-     * @return void
-     */
-    public function setAdapter($adapter)
-    {
-        if (is_callable($adapter)) {
-            $adapter = call_user_func($adapter, $this->container);
-        }
-
-        $this->adapter = $adapter;
     }
 
     /**
      * Get the transformation layer adapter.
      *
-     * @return \Dingo\Api\Contract\Transformer\Adapter
+     * @return Adapter
      */
-    public function getAdapter()
-    {
+    public function getAdapter() : Adapter {
         return $this->adapter;
     }
 
     /**
      * Get the request from the container.
      *
-     * @return \Dingo\Api\Http\Request
+     * @return Request
      */
-    public function getRequest()
-    {
+    public function getRequest() : Request {
         $request = $this->container['request'];
 
-        if ($request instanceof IlluminateRequest && ! $request instanceof Request) {
-            $request = (new Request())->createFromIlluminate($request);
+        if ($request instanceof IlluminateRequest && !$request instanceof Request) {
+            $request = Request::createFromIlluminate($request);
         }
 
         return $request;
     }
 
-    /**
-     * Pass unknown method calls through to the adapter.
-     *
-     * @param string $method
-     * @param array  $parameters
-     *
-     * @return mixed
-     */
-    public function __call($method, $parameters)
-    {
-        return call_user_func_array([$this->adapter, $method], $parameters);
-    }
 }

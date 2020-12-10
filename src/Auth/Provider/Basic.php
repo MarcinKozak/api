@@ -3,6 +3,7 @@
 namespace Dingo\Api\Auth\Provider;
 
 use Dingo\Api\Routing\Route;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
 use Illuminate\Auth\AuthManager;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
@@ -12,7 +13,7 @@ class Basic extends Authorization
     /**
      * Illuminate authentication manager.
      *
-     * @var \Illuminate\Auth\AuthManager
+     * @var AuthManager
      */
     protected $auth;
 
@@ -24,14 +25,11 @@ class Basic extends Authorization
     protected $identifier;
 
     /**
-     * Create a new basic provider instance.
-     *
-     * @param \Illuminate\Auth\AuthManager $auth
-     * @param string                       $identifier
-     *
-     * @return void
+     * Basic constructor.
+     * @param AuthManager $auth
+     * @param string $identifier
      */
-    public function __construct(AuthManager $auth, $identifier = 'email')
+    public function __construct(AuthManager $auth, string $identifier = 'email')
     {
         $this->auth = $auth;
         $this->identifier = $identifier;
@@ -40,20 +38,22 @@ class Basic extends Authorization
     /**
      * Authenticate request with Basic.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param \Dingo\Api\Routing\Route $route
+     * @param Request $request
+     * @param Route $route
      *
-     * @return mixed
+     * @return Authenticatable|null
      */
-    public function authenticate(Request $request, Route $route)
+    public function authenticate(Request $request, Route $route) : ?Authenticatable
     {
         $this->validateAuthorizationHeader($request);
 
-        if (($response = $this->auth->onceBasic($this->identifier)) && $response->getStatusCode() === 401) {
+        $guard = $this->auth->guard();
+
+        if (($response = $guard->onceBasic($this->identifier)) && $response->getStatusCode() === 401) {
             throw new UnauthorizedHttpException('Basic', 'Invalid authentication credentials.');
         }
 
-        return $this->auth->user();
+        return $guard->user();
     }
 
     /**
@@ -61,7 +61,7 @@ class Basic extends Authorization
      *
      * @return string
      */
-    public function getAuthorizationMethod()
+    public function getAuthorizationMethod() : string
     {
         return 'basic';
     }

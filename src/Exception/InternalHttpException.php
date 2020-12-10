@@ -11,22 +11,19 @@ class InternalHttpException extends HttpException
     /**
      * The response.
      *
-     * @var \Illuminate\Http\Response
+     * @var Response
      */
     protected $response;
 
     /**
-     * Create a new internal HTTP exception instance.
-     *
-     * @param \Symfony\Component\HttpFoundation\Response $response
-     * @param string                                     $message
-     * @param \Exception                                 $previous
-     * @param array                                      $headers
-     * @param int                                        $code
-     *
-     * @return void
+     * InternalHttpException constructor.
+     * @param Response $response
+     * @param string|null $message
+     * @param Exception|null $previous
+     * @param array $headers
+     * @param int|null $code
      */
-    public function __construct(Response $response, $message = null, Exception $previous = null, array $headers = [], $code = 0)
+    public function __construct(Response $response, string $message = null, Exception $previous = null, array $headers = [], ?int $code = 0)
     {
         $this->response = $response;
 
@@ -36,10 +33,9 @@ class InternalHttpException extends HttpException
     /**
      * Get the response of the internal request.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function getResponse()
-    {
+    public function getResponse(): Response {
         return $this->response;
     }
 }

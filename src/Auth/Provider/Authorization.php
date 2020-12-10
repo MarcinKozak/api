@@ -5,8 +5,9 @@ namespace Dingo\Api\Auth\Provider;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Dingo\Api\Contract\Auth\Provider as AuthProvider;
 
-abstract class Authorization implements \Dingo\Api\Contract\Auth\Provider
+abstract class Authorization implements AuthProvider
 {
     /**
      * Array of provider specific options.
@@ -18,16 +19,16 @@ abstract class Authorization implements \Dingo\Api\Contract\Auth\Provider
     /**
      * Validate the requests authorization header for the provider.
      *
-     * @param \Illuminate\Http\Request $request
+     * @param Request $request
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\BadRequestHttpException
+     * @throws BadRequestHttpException
      *
-     * @return bool
+     * @return void
      */
-    public function validateAuthorizationHeader(Request $request)
+    public function validateAuthorizationHeader(Request $request) : void
     {
         if (Str::startsWith(strtolower($request->headers->get('authorization')), $this->getAuthorizationMethod())) {
-            return true;
+            return;
         }
 
         throw new BadRequestHttpException;
@@ -38,5 +39,5 @@ abstract class Authorization implements \Dingo\Api\Contract\Auth\Provider
      *
      * @return string
      */
-    abstract public function getAuthorizationMethod();
+    abstract public function getAuthorizationMethod() : string;
 }

@@ -8,7 +8,7 @@ use Dingo\Api\Contract\Http\Validator;
 
 class Domain implements Validator
 {
-    const PATTERN_STRIP_PROTOCOL = '/:\d*$/';
+    public const PATTERN_STRIP_PROTOCOL = '/:\d*$/';
 
     /**
      * API domain.
@@ -24,7 +24,7 @@ class Domain implements Validator
      *
      * @return void
      */
-    public function __construct($domain)
+    public function __construct(string $domain)
     {
         $this->domain = $domain;
     }
@@ -32,11 +32,11 @@ class Domain implements Validator
     /**
      * Validate that the request domain matches the configured domain.
      *
-     * @param \Illuminate\Http\Request $request
+     * @param Request $request
      *
      * @return bool
      */
-    public function validate(Request $request)
+    public function validate(Request $request) : bool
     {
         return ! is_null($this->domain) && $request->getHost() === $this->getStrippedDomain();
     }
@@ -48,7 +48,7 @@ class Domain implements Validator
      *
      * @return string
      */
-    protected function stripProtocol($domain)
+    protected function stripProtocol(string $domain) : string
     {
         if (Str::contains($domain, '://')) {
             $domain = substr($domain, strpos($domain, '://') + 3);
@@ -60,11 +60,11 @@ class Domain implements Validator
     /**
      * Strip the port from a domain.
      *
-     * @param $domain
+     * @param string $domain
      *
-     * @return mixed
+     * @return string
      */
-    protected function stripPort($domain)
+    protected function stripPort(string $domain) : string
     {
         if ($domainStripped = preg_replace(self::PATTERN_STRIP_PROTOCOL, null, $domain)) {
             return $domainStripped;
@@ -76,9 +76,9 @@ class Domain implements Validator
     /**
      * Get the domain stripped from protocol and port.
      *
-     * @return mixed
+     * @return string
      */
-    protected function getStrippedDomain()
+    protected function getStrippedDomain() : string
     {
         return $this->stripPort($this->stripProtocol($this->domain));
     }

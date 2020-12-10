@@ -3,6 +3,7 @@
 namespace Dingo\Api;
 
 use Dingo\Api\Auth\Auth;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Str;
 use Dingo\Api\Routing\Router;
 use Dingo\Api\Http\InternalRequest;
@@ -19,28 +20,28 @@ class Dispatcher
     /**
      * Illuminate container instance.
      *
-     * @var \Illuminate\Container\Container
+     * @var Container
      */
     protected $container;
 
     /**
      * Illuminate filesystem instance.
      *
-     * @var \Illuminate\Filesystem\Filesystem
+     * @var Filesystem
      */
     protected $files;
 
     /**
      * Router instance.
      *
-     * @var \Dingo\Api\Routing\Router
+     * @var Router
      */
     protected $router;
 
     /**
      * Auth instance.
      *
-     * @var \Dingo\Api\Auth\Auth
+     * @var Auth
      */
     protected $auth;
 
@@ -166,10 +167,10 @@ class Dispatcher
     /**
      * Create a new dispatcher instance.
      *
-     * @param \Illuminate\Container\Container   $container
-     * @param \Illuminate\Filesystem\Filesystem $files
-     * @param \Dingo\Api\Routing\Router         $router
-     * @param \Dingo\Api\Auth\Auth              $auth
+     * @param Container $container
+     * @param Filesystem $files
+     * @param Router $router
+     * @param Auth $auth
      *
      * @return void
      */
@@ -198,17 +199,17 @@ class Dispatcher
      *
      * @param array $files
      *
-     * @return \Dingo\Api\Dispatcher
+     * @return Dispatcher
      */
-    public function attach(array $files)
+    public function attach(array $files) : self
     {
         foreach ($files as $key => $file) {
             if (is_array($file)) {
                 $file = new UploadedFile($file['path'], basename($file['path']), $file['mime'], $file['size']);
             } elseif (is_string($file)) {
-                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
 
-                $file = new UploadedFile($file, basename($file), finfo_file($finfo, $file), $this->files->size($file));
+                $file = new UploadedFile($file, basename($file), finfo_file($fileInfo, $file), $this->files->size($file));
             } elseif (! $file instanceof UploadedFile) {
                 continue;
             }
@@ -222,11 +223,11 @@ class Dispatcher
     /**
      * Internal request will be authenticated as the given user.
      *
-     * @param mixed $user
+     * @param Authenticatable $user
      *
-     * @return \Dingo\Api\Dispatcher
+     * @return Dispatcher
      */
-    public function be($user)
+    public function be(Authenticatable $user) : self
     {
         $this->auth->setUser($user);
 
@@ -238,7 +239,7 @@ class Dispatcher
      *
      * @param string|array $content
      *
-     * @return \Dingo\Api\Dispatcher
+     * @return Dispatcher
      */
     public function json($content)
     {
@@ -256,7 +257,7 @@ class Dispatcher
      *
      * @param string $domain
      *
-     * @return \Dingo\Api\Dispatcher
+     * @return Dispatcher
      */
     public function on($domain)
     {
@@ -268,7 +269,7 @@ class Dispatcher
     /**
      * Return the raw response object once request is dispatched.
      *
-     * @return \Dingo\Api\Dispatcher
+     * @return Dispatcher
      */
     public function raw()
     {
@@ -280,7 +281,7 @@ class Dispatcher
     /**
      * Only authenticate with the given user for a single request.
      *
-     * @return \Dingo\Api\Dispatcher
+     * @return Dispatcher
      */
     public function once()
     {
@@ -294,7 +295,7 @@ class Dispatcher
      *
      * @param string $version
      *
-     * @return \Dingo\Api\Dispatcher
+     * @return Dispatcher
      */
     public function version($version)
     {
@@ -308,7 +309,7 @@ class Dispatcher
      *
      * @param string|array $parameters
      *
-     * @return \Dingo\Api\Dispatcher
+     * @return Dispatcher
      */
     public function with($parameters)
     {
@@ -323,7 +324,7 @@ class Dispatcher
      * @param string $key
      * @param string $value
      *
-     * @return \Dingo\Api\Dispatcher
+     * @return Dispatcher
      */
     public function header($key, $value)
     {
@@ -337,7 +338,7 @@ class Dispatcher
      *
      * @param \Symfony\Component\HttpFoundation\Cookie $cookie
      *
-     * @return \Dingo\Api\Dispatcher
+     * @return Dispatcher
      */
     public function cookie(Cookie $cookie)
     {

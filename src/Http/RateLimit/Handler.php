@@ -2,9 +2,9 @@
 
 namespace Dingo\Api\Http\RateLimit;
 
-use Dingo\Api\Http\Request;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Cache\CacheManager;
+use Illuminate\Cache\Repository as CacheRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Container\Container;
 use Dingo\Api\Http\RateLimit\Throttle\Route;
@@ -16,35 +16,35 @@ class Handler
     /**
      * Container instance.
      *
-     * @var \Illuminate\Container\Container
+     * @var Container
      */
     protected $container;
 
     /**
      * Cache instance.
      *
-     * @var \Illuminate\Cache\CacheManager
+     * @var CacheRepository
      */
     protected $cache;
 
     /**
      * Registered throttles.
      *
-     * @var \Illuminate\Support\Collection
+     * @var Collection
      */
     protected $throttles;
 
     /**
      * Throttle used for rate limiting.
      *
-     * @var \Dingo\Api\Contract\Http\RateLimit\Throttle
+     * @var Throttle
      */
     protected $throttle;
 
     /**
      * Request instance being throttled.
      *
-     * @var \Dingo\Api\Http\Request
+     * @var Request
      */
     protected $request;
 
@@ -65,13 +65,11 @@ class Handler
     /**
      * Create a new rate limit handler instance.
      *
-     * @param \Illuminate\Container\Container $container
-     * @param \Illuminate\Cache\CacheManager  $cache
-     * @param array                           $throttles
-     *
-     * @return void
+     * @param Container $container
+     * @param CacheRepository $cache
+     * @param array $throttles
      */
-    public function __construct(Container $container, CacheManager $cache, array $throttles)
+    public function __construct(Container $container, CacheRepository $cache, array $throttles)
     {
         $this->cache = $cache;
         $this->container = $container;
@@ -79,15 +77,11 @@ class Handler
     }
 
     /**
-     * Execute the rate limiting for the given request.
-     *
-     * @param \Dingo\Api\Http\Request $request
-     * @param int                     $limit
-     * @param int                     $expires
-     *
-     * @return void
+     * @param Request $request
+     * @param int $limit
+     * @param int $expires
      */
-    public function rateLimitRequest(Request $request, $limit = 0, $expires = 0)
+    public function rateLimitRequest(Request $request, int $limit = 0, int $expires = 0) : void
     {
         $this->request = $request;
 
@@ -132,9 +126,9 @@ class Handler
      *
      * @return void
      */
-    protected function prepareCacheStore()
+    protected function prepareCacheStore() : void
     {
-        if ($this->retrieve('expires') != $this->throttle->getExpires()) {
+        if ($this->retrieve('expires') !== $this->throttle->getExpires()) {
             $this->forget('requests');
             $this->forget('expires');
             $this->forget('reset');
@@ -146,7 +140,7 @@ class Handler
      *
      * @return bool
      */
-    public function exceededRateLimit()
+    public function exceededRateLimit() : bool
     {
         return $this->requestWasRateLimited() ? $this->retrieve('requests') > $this->throttle->getLimit() : false;
     }
@@ -154,9 +148,9 @@ class Handler
     /**
      * Get matching throttles after executing the condition of each throttle.
      *
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
-    protected function getMatchingThrottles()
+    protected function getMatchingThrottles() : Collection
     {
         return $this->throttles->filter(function ($throttle) {
             return $throttle->match($this->container);
@@ -170,7 +164,7 @@ class Handler
      *
      * @return string
      */
-    protected function key($key)
+    protected function key(string $key) : string
     {
         return sprintf('dingo.api.%s.%s', $key, $this->getRateLimiter());
     }
@@ -184,7 +178,7 @@ class Handler
      *
      * @return void
      */
-    protected function cache($key, $value, $minutes)
+    protected function cache(string $key, $value, int $minutes) : void
     {
         $this->cache->add($this->key($key), $value, Carbon::now()->addMinutes($minutes));
     }
@@ -196,7 +190,7 @@ class Handler
      *
      * @return mixed
      */
-    protected function retrieve($key)
+    protected function retrieve(string $key)
     {
         return $this->cache->get($this->key($key));
     }
@@ -208,7 +202,7 @@ class Handler
      *
      * @return void
      */
-    protected function increment($key)
+    protected function increment(string $key) : void
     {
         $this->cache->increment($this->key($key));
     }
@@ -220,7 +214,7 @@ class Handler
      *
      * @return void
      */
-    protected function forget($key)
+    protected function forget(string $key) : void
     {
         $this->cache->forget($this->key($key));
     }
@@ -230,7 +224,7 @@ class Handler
      *
      * @return bool
      */
-    public function requestWasRateLimited()
+    public function requestWasRateLimited() : bool
     {
         return ! is_null($this->throttle);
     }
@@ -240,11 +234,13 @@ class Handler
      *
      * @return string
      */
-    public function getRateLimiter()
+    public function getRateLimiter() : string
     {
-        return call_user_func($this->limiter ?: function ($container, $request) {
+        $closure = $this->limiter ?: static function ($container, $request) {
             return $request->getClientIp();
-        }, $this->container, $this->request);
+        };
+
+        return $closure($this->container, $this->request);
     }
 
     /**
@@ -254,7 +250,7 @@ class Handler
      *
      * @return void
      */
-    public function setRateLimiter(callable $limiter)
+    public function setRateLimiter(callable $limiter) : void
     {
         $this->limiter = $limiter;
     }
@@ -262,11 +258,11 @@ class Handler
     /**
      * Set the throttle to use for rate limiting.
      *
-     * @param string|\Dingo\Api\Contract\Http\RateLimit\Throttle $throttle
+     * @param string|Throttle $throttle
      *
      * @return void
      */
-    public function setThrottle($throttle)
+    public function setThrottle($throttle) : void
     {
         if (is_string($throttle)) {
             $throttle = $this->container->make($throttle);
@@ -278,9 +274,9 @@ class Handler
     /**
      * Get the throttle used to rate limit the request.
      *
-     * @return \Dingo\Api\Contract\Http\RateLimit\Throttle
+     * @return Throttle
      */
-    public function getThrottle()
+    public function getThrottle() : Throttle
     {
         return $this->throttle;
     }
@@ -290,7 +286,7 @@ class Handler
      *
      * @return int
      */
-    public function getThrottleLimit()
+    public function getThrottleLimit() : int
     {
         return $this->throttle->getLimit();
     }
@@ -300,7 +296,7 @@ class Handler
      *
      * @return int
      */
-    public function getRemainingLimit()
+    public function getRemainingLimit() : int
     {
         $remaining = $this->throttle->getLimit() - $this->retrieve('requests');
 
@@ -312,7 +308,7 @@ class Handler
      *
      * @return int
      */
-    public function getRateLimitReset()
+    public function getRateLimitReset() : int
     {
         return $this->retrieve('reset');
     }
@@ -320,14 +316,14 @@ class Handler
     /**
      * Extend the rate limiter by adding a new throttle.
      *
-     * @param callable|\Dingo\Api\Http\RateLimit\Throttle $throttle
+     * @param callable|Throttle $throttle
      *
      * @return void
      */
-    public function extend($throttle)
+    public function extend($throttle) : void
     {
         if (is_callable($throttle)) {
-            $throttle = call_user_func($throttle, $this->container);
+            $throttle = $throttle($this->container);
         }
 
         $this->throttles->push($throttle);

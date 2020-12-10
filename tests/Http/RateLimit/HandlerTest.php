@@ -44,9 +44,9 @@ class HandlerTest extends BaseTestCase
 
         $throttle = $this->limiter->getThrottle();
 
-        $this->assertInstanceOf(Route::class, $throttle);
-        $this->assertSame(100, $throttle->getLimit());
-        $this->assertSame(100, $throttle->getExpires());
+        self::assertInstanceOf(Route::class, $throttle);
+        self::assertSame(100, $throttle->getLimit());
+        self::assertSame(100, $throttle->getExpires());
     }
 
     public function testThrottleWithHighestAmountOfRequestsIsUsedWhenMoreThanOneMatchingThrottle()
@@ -56,7 +56,7 @@ class HandlerTest extends BaseTestCase
 
         $this->limiter->rateLimitRequest(Request::create('test', 'GET'));
 
-        $this->assertSame($first, $this->limiter->getThrottle());
+        self::assertSame($first, $this->limiter->getThrottle());
     }
 
     public function testExceedingOfRateLimit()
@@ -64,20 +64,20 @@ class HandlerTest extends BaseTestCase
         $request = Request::create('test', 'GET');
 
         $this->limiter->rateLimitRequest($request);
-        $this->assertFalse($this->limiter->exceededRateLimit());
+        self::assertFalse($this->limiter->exceededRateLimit());
 
         $this->limiter->extend(new ThrottleStub(['limit' => 1, 'expires' => 200]));
         $this->limiter->rateLimitRequest($request);
-        $this->assertFalse($this->limiter->exceededRateLimit());
+        self::assertFalse($this->limiter->exceededRateLimit());
 
         $this->limiter->rateLimitRequest($request);
-        $this->assertTrue($this->limiter->exceededRateLimit());
+        self::assertTrue($this->limiter->exceededRateLimit());
     }
 
     public function testGettingTheRemainingLimit()
     {
         $this->limiter->extend(new ThrottleStub(['limit' => 10, 'expires' => 200]));
         $this->limiter->rateLimitRequest(Request::create('test', 'GET'));
-        $this->assertSame(9, $this->limiter->getRemainingLimit());
+        self::assertSame(9, $this->limiter->getRemainingLimit());
     }
 }

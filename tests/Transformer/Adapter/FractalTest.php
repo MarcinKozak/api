@@ -22,7 +22,7 @@ class FractalTest extends BaseTestCase
         $this->fractal->parseFractalIncludes($request);
         $requestedIncludes = $this->fractal->getFractal()->getRequestedIncludes();
 
-        $this->assertEquals(['foo', 'bar'], $requestedIncludes);
+        self::assertEquals(['foo', 'bar'], $requestedIncludes);
     }
 
     public function testParseFractalIncludesWithSpaces()
@@ -31,6 +31,6 @@ class FractalTest extends BaseTestCase
         $this->fractal->parseFractalIncludes($request);
         $requestedIncludes = $this->fractal->getFractal()->getRequestedIncludes();
 
-        $this->assertEquals(['foo', 'bar'], $requestedIncludes);
+        self::assertEquals(['foo', 'bar'], $requestedIncludes);
     }
 }

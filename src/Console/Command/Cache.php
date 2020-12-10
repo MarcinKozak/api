@@ -27,30 +27,30 @@ class Cache extends Command
     /**
      * Filesystem instance.
      *
-     * @var \Illuminate\Filesystem\Filesystem
+     * @var Filesystem
      */
     protected $files;
 
     /**
      * Router instance.
      *
-     * @var \Dingo\Api\Routing\Router
+     * @var Router
      */
     private $router;
 
     /**
      * Adapter instance.
      *
-     * @var \Dingo\Api\Contract\Routing\Adapter
+     * @var Adapter
      */
     private $adapter;
 
     /**
      * Create a new cache command instance.
      *
-     * @param \Illuminate\Filesystem\Filesystem   $files
-     * @param \Dingo\Api\Routing\Router           $router
-     * @param \Dingo\Api\Contract\Routing\Adapter $adapter
+     * @param Filesystem $files
+     * @param Router $router
+     * @param Adapter $adapter
      *
      * @return void
      */

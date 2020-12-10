@@ -14,6 +14,6 @@ class AcceptTest extends BaseTestCase
         $parser = new AcceptParser('vnd', 'api', 'v1', 'json');
         $validator = new AcceptValidator($parser, true);
 
-        $this->assertTrue($validator->validate(Request::create('bar', 'OPTIONS')), 'Validation failed when it should have passed with an options request.');
+        self::assertTrue($validator->validate(Request::create('bar', 'OPTIONS')), 'Validation failed when it should have passed with an options request.');
     }
 }

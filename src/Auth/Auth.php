@@ -2,25 +2,27 @@
 
 namespace Dingo\Api\Auth;
 
+use Dingo\Api\Contract\Auth\Provider;
 use Exception;
 use Dingo\Api\Routing\Router;
 use Illuminate\Container\Container;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 class Auth
 {
     /**
      * Router instance.
      *
-     * @var \Dingo\Api\Routing\Router
+     * @var Router
      */
     protected $router;
 
     /**
      * Illuminate container instance.
      *
-     * @var \Illuminate\Container\Container
+     * @var Container
      */
     protected $container;
 
@@ -34,25 +36,23 @@ class Auth
     /**
      * The provider used for authentication.
      *
-     * @var \Dingo\Api\Contract\Auth\Provider
+     * @var Provider
      */
     protected $providerUsed;
 
     /**
      * Authenticated user instance.
      *
-     * @var \Illuminate\Auth\GenericUser|\Illuminate\Database\Eloquent\Model
+     * @var Authenticatable
      */
     protected $user;
 
     /**
      * Create a new auth instance.
      *
-     * @param \Dingo\Api\Routing\Router       $router
-     * @param \Illuminate\Container\Container $container
-     * @param array                           $providers
-     *
-     * @return void
+     * @param Router $router
+     * @param Container $container
+     * @param array $providers
      */
     public function __construct(Router $router, Container $container, array $providers)
     {
@@ -66,11 +66,11 @@ class Auth
      *
      * @param array $providers
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException
+     * @return Authenticatable|null
+     * @throws UnauthorizedHttpException
      *
-     * @return mixed
      */
-    public function authenticate(array $providers = [])
+    public function authenticate(array $providers = []) : ?Authenticatable
     {
         $exceptionStack = [];
 
@@ -94,6 +94,8 @@ class Auth
         }
 
         $this->throwUnauthorizedException($exceptionStack);
+
+        return null;
     }
 
     /**
@@ -101,12 +103,10 @@ class Auth
      *
      * @param array $exceptionStack
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException
-     *
      * @return void
+     * @throws UnauthorizedHttpException
      */
-    protected function throwUnauthorizedException(array $exceptionStack)
-    {
+    protected function throwUnauthorizedException(array $exceptionStack): void {
         $exception = array_shift($exceptionStack);
 
         if ($exception === null) {
@@ -120,10 +120,9 @@ class Auth
      * Filter the requested providers from the available providers.
      *
      * @param array $providers
-     *
      * @return array
      */
-    protected function filterProviders(array $providers)
+    protected function filterProviders(array $providers) : array
     {
         if (empty($providers)) {
             return $this->providers;
@@ -137,20 +136,22 @@ class Auth
      *
      * @param bool $authenticate
      *
-     * @return \Illuminate\Auth\GenericUser|\Illuminate\Database\Eloquent\Model|null
+     * @return Authenticatable|null
      */
-    public function getUser($authenticate = true)
+    public function getUser($authenticate = true)  : ?Authenticatable
     {
         if ($this->user) {
             return $this->user;
-        } elseif (! $authenticate) {
-            return;
+        }
+
+        if (! $authenticate) {
+            return null;
         }
 
         try {
             return $this->user = $this->authenticate();
         } catch (Exception $exception) {
-            return;
+            return null;
         }
     }
 
@@ -159,9 +160,9 @@ class Auth
      *
      * @param bool $authenticate
      *
-     * @return \Illuminate\Auth\GenericUser|\Illuminate\Database\Eloquent\Model
+     * @return Authenticatable|null
      */
-    public function user($authenticate = true)
+    public function user($authenticate = true)  : ?Authenticatable
     {
         return $this->getUser($authenticate);
     }
@@ -169,11 +170,11 @@ class Auth
     /**
      * Set the authenticated user.
      *
-     * @param \Illuminate\Auth\GenericUser|\Illuminate\Database\Eloquent\Model $user
+     * @param Authenticatable $user
      *
-     * @return \Dingo\Api\Auth\Auth
+     * @return Auth
      */
-    public function setUser($user)
+    public function setUser(Authenticatable $user) : self
     {
         $this->user = $user;
 
@@ -187,7 +188,7 @@ class Auth
      *
      * @return bool
      */
-    public function check($authenticate = false)
+    public function check($authenticate = false) : bool
     {
         return ! is_null($this->user($authenticate));
     }
@@ -195,9 +196,9 @@ class Auth
     /**
      * Get the provider used for authentication.
      *
-     * @return \Dingo\Api\Contract\Auth\Provider
+     * @return Provider
      */
-    public function getProviderUsed()
+    public function getProviderUsed() : Provider
     {
         return $this->providerUsed;
     }
@@ -210,10 +211,10 @@ class Auth
      *
      * @return void
      */
-    public function extend($key, $provider)
+    public function extend(string $key, $provider) : void
     {
         if (is_callable($provider)) {
-            $provider = call_user_func($provider, $this->container);
+            $provider = $provider($this->container);
         }
 
         $this->providers[$key] = $provider;

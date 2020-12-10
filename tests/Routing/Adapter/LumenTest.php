@@ -2,16 +2,18 @@
 
 namespace Dingo\Api\Tests\Routing\Adapter;
 
+use Dingo\Api\Contract\Routing\Adapter;
 use Dingo\Api\Routing\Adapter\Lumen;
 use FastRoute\DataGenerator\GroupCountBased as GcbDataGenerator;
 use FastRoute\Dispatcher\GroupCountBased as GcbDispatcher;
 use FastRoute\RouteParser\Std as StdRouteParser;
+use Illuminate\Container\Container;
 use Illuminate\Http\Request;
 use Laravel\Lumen\Application;
 
 class LumenTest extends BaseAdapterTest
 {
-    public function getAdapterInstance()
+    public function getAdapterInstance() : Adapter
     {
         $this->container->routeMiddleware([
             'api.auth' => get_class($this->container['api.auth']),
@@ -30,13 +32,13 @@ class LumenTest extends BaseAdapterTest
         });
     }
 
-    public function getContainerInstance()
+    public function getContainerInstance() : Container
     {
         return new Application;
     }
 
-    public function testRoutesWithDomains()
+    public function testRoutesWithDomains() : void
     {
-        $this->markTestSkipped('Lumen does not support sub-domain routing.');
+        self::markTestSkipped('Lumen does not support sub-domain routing.');
     }
 }

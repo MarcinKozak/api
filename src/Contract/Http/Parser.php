@@ -9,9 +9,9 @@ interface Parser
     /**
      * Parse an incoming request.
      *
-     * @param \Illuminate\Http\Request $request
+     * @param IlluminateRequest $request
      *
-     * @return mixed
+     * @return array
      */
-    public function parse(IlluminateRequest $request);
+    public function parse(IlluminateRequest $request) : array;
 }

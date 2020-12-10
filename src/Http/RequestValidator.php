@@ -14,7 +14,7 @@ class RequestValidator
     /**
      * Container instance.
      *
-     * @var \Illuminate\Container\Container
+     * @var Container
      */
     protected $container;
 
@@ -31,7 +31,7 @@ class RequestValidator
     /**
      * Create a new request validator instance.
      *
-     * @param \Illuminate\Container\Container $container
+     * @param Container $container
      *
      * @return void
      */
@@ -47,7 +47,7 @@ class RequestValidator
      *
      * @return void
      */
-    public function replace(array $validators)
+    public function replace(array $validators) : void
     {
         $this->validators = $validators;
     }
@@ -59,31 +59,19 @@ class RequestValidator
      *
      * @return void
      */
-    public function merge(array $validators)
+    public function merge(array $validators) : void
     {
         $this->validators = array_merge($this->validators, $validators);
     }
 
     /**
-     * Extend the validators.
-     *
-     * @param string|\Dingo\Api\Http\Validator $validator
-     *
-     * @return void
-     */
-    public function extend($validator)
-    {
-        $this->validators[] = $validator;
-    }
-
-    /**
      * Validate a request.
      *
-     * @param \Illuminate\Http\Request $request
+     * @param IlluminateRequest $request
      *
      * @return bool
      */
-    public function validateRequest(IlluminateRequest $request)
+    public function validateRequest(IlluminateRequest $request) : bool
     {
         $passed = false;
 

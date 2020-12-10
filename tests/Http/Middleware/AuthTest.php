@@ -46,8 +46,7 @@ class AuthTest extends BaseTestCase
         $this->middleware = new AuthMiddleware($this->router, $this->auth);
     }
 
-    public function testProtectedRouteFiresAuthenticationAndPasses()
-    {
+    public function testProtectedRouteFiresAuthenticationAndPasses(): void {
         $request = Request::create('test', 'GET');
 
         $route = new Route($this->adapter, $this->container, $request, new IlluminateRoute('GET', '/test', [
@@ -60,11 +59,11 @@ class AuthTest extends BaseTestCase
         $this->router->shouldReceive('getCurrentRoute')->once()->andReturn($route);
 
         $this->middleware->handle($request, function ($handledRequest) use ($request) {
-            $this->assertSame($handledRequest, $request);
+            self::assertSame($handledRequest, $request);
         });
     }
 
-    public function testProtectedRouteAlreadyLoggedIn()
+    public function testProtectedRouteAlreadyLoggedIn(): void
     {
         $request = Request::create('test', 'GET');
 
@@ -77,11 +76,11 @@ class AuthTest extends BaseTestCase
         $this->router->shouldReceive('getCurrentRoute')->once()->andReturn($route);
 
         $this->middleware->handle($request, function ($handledRequest) use ($request) {
-            $this->assertSame($handledRequest, $request);
+            self::assertSame($handledRequest, $request);
         });
     }
 
-    public function testAuthenticationFailsAndExceptionIsThrown()
+    public function testAuthenticationFailsAndExceptionIsThrown(): void
     {
         $this->expectException(UnauthorizedHttpException::class);
 
@@ -98,7 +97,7 @@ class AuthTest extends BaseTestCase
 
         $this->router->shouldReceive('getCurrentRoute')->once()->andReturn($route);
 
-        $this->middleware->handle($request, function () {
+        $this->middleware->handle($request, static function () {
             //
         });
     }

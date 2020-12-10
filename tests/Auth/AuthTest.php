@@ -8,6 +8,7 @@ use Dingo\Api\Http\Request;
 use Dingo\Api\Routing\Route;
 use Dingo\Api\Routing\Router;
 use Dingo\Api\Tests\BaseTestCase;
+use Illuminate\Auth\GenericUser;
 use Illuminate\Container\Container;
 use Mockery as m;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -37,7 +38,7 @@ class AuthTest extends BaseTestCase
         $this->auth = new Auth($this->router, $this->container, []);
     }
 
-    public function testExceptionThrownWhenAuthorizationHeaderNotSet()
+    public function testExceptionThrownWhenAuthorizationHeaderNotSet(): void
     {
         $this->expectException(UnauthorizedHttpException::class);
 
@@ -52,7 +53,7 @@ class AuthTest extends BaseTestCase
         $this->auth->authenticate();
     }
 
-    public function testExceptionThrownWhenProviderFailsToAuthenticate()
+    public function testExceptionThrownWhenProviderFailsToAuthenticate(): void
     {
         $this->expectException(UnauthorizedHttpException::class);
 
@@ -67,7 +68,7 @@ class AuthTest extends BaseTestCase
         $this->auth->authenticate();
     }
 
-    public function testAuthenticationIsSuccessfulAndUserIsSet()
+    public function testAuthenticationIsSuccessfulAndUserIsSet(): void
     {
         $this->router->shouldReceive('getCurrentRoute')->once()->andReturn($route = m::mock(Route::class));
         $this->router->shouldReceive('getCurrentRequest')->once()->andReturn($request = Request::create('foo', 'GET'));
@@ -79,10 +80,10 @@ class AuthTest extends BaseTestCase
 
         $user = $this->auth->authenticate();
 
-        $this->assertSame(1, $user->id);
+        self::assertSame(1, $user->id);
     }
 
-    public function testProvidersAreFilteredWhenSpecificProviderIsRequested()
+    public function testProvidersAreFilteredWhenSpecificProviderIsRequested(): void
     {
         $this->router->shouldReceive('getCurrentRoute')->once()->andReturn($route = m::mock(Route::class));
         $this->router->shouldReceive('getCurrentRequest')->once()->andReturn($request = Request::create('foo', 'GET'));
@@ -94,24 +95,25 @@ class AuthTest extends BaseTestCase
         $this->auth->extend('two', $provider);
 
         $this->auth->authenticate(['two']);
-        $this->assertSame($provider, $this->auth->getProviderUsed());
+        self::assertSame($provider, $this->auth->getProviderUsed());
     }
 
-    public function testGettingUserWhenNotAuthenticatedAttemptsToAuthenticateAndReturnsNull()
+    public function testGettingUserWhenNotAuthenticatedAttemptsToAuthenticateAndReturnsNull(): void
     {
         $this->router->shouldReceive('getCurrentRoute')->once()->andReturn(m::mock(Route::class));
         $this->router->shouldReceive('getCurrentRequest')->once()->andReturn(Request::create('foo', 'GET'));
 
         $this->auth->extend('provider', m::mock(Provider::class));
 
-        $this->assertNull($this->auth->user());
+        self::assertNull($this->auth->user());
     }
 
-    public function testGettingUserWhenAlreadyAuthenticatedReturnsUser()
+    public function testGettingUserWhenAlreadyAuthenticatedReturnsUser(): void
     {
-        $this->auth->setUser((object) ['id' => 1]);
+        $user = new GenericUser(['id' => 1]);
+        $this->auth->setUser($user);
 
-        $this->assertSame(1, $this->auth->user()->id);
-        $this->assertTrue($this->auth->check());
+        self::assertSame(1, $this->auth->user()->id);
+        self::assertTrue($this->auth->check());
     }
 }

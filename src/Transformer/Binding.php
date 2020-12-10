@@ -3,7 +3,6 @@
 namespace Dingo\Api\Transformer;
 
 use Closure;
-use RuntimeException;
 use Illuminate\Container\Container;
 
 class Binding
@@ -11,14 +10,14 @@ class Binding
     /**
      * Illuminate container instance.
      *
-     * @var \Illuminate\Container\Container
+     * @var Container
      */
     protected $container;
 
     /**
      * Binding resolver.
      *
-     * @var mixed
+     * @var Resolver
      */
     protected $resolver;
 
@@ -32,7 +31,7 @@ class Binding
     /**
      * Callback fired during transformation.
      *
-     * @var \Closure
+     * @var Closure|null
      */
     protected $callback;
 
@@ -44,16 +43,13 @@ class Binding
     protected $meta = [];
 
     /**
-     * Create a new binding instance.
-     *
-     * @param \Illuminate\Container\Container $container
-     * @param mixed                           $resolver
-     * @param array                           $parameters
-     * @param \Closure                        $callback
-     *
-     * @return void
+     * Binding constructor.
+     * @param Container $container
+     * @param Resolver $resolver
+     * @param array $parameters
+     * @param Closure|null $callback
      */
-    public function __construct(Container $container, $resolver, array $parameters = [], Closure $callback = null)
+    public function __construct(Container $container, Resolver $resolver, array $parameters = [], Closure $callback = null)
     {
         $this->container = $container;
         $this->resolver = $resolver;
@@ -64,34 +60,24 @@ class Binding
     /**
      * Resolve a transformer binding instance.
      *
-     * @throws \RuntimeException
-     *
      * @return object
      */
-    public function resolveTransformer()
+    public function resolveTransformer() : object
     {
-        if (is_string($this->resolver)) {
-            return $this->container->make($this->resolver);
-        } elseif (is_callable($this->resolver)) {
-            return call_user_func($this->resolver, $this->container);
-        } elseif (is_object($this->resolver)) {
-            return $this->resolver;
-        }
-
-        throw new RuntimeException('Unable to resolve transformer binding.');
+        return $this->resolver->create($this->container);
     }
 
     /**
      * Fire the binding callback.
      *
-     * @param string|array $parameters
+     * @param array $parameters
      *
      * @return void
      */
-    public function fireCallback($parameters = null)
+    public function fireCallback(array $parameters = []) : void
     {
         if (is_callable($this->callback)) {
-            call_user_func_array($this->callback, func_get_args());
+            call_user_func_array($this->callback, $parameters);
         }
     }
 
@@ -100,7 +86,7 @@ class Binding
      *
      * @return array
      */
-    public function getParameters()
+    public function getParameters() : array
     {
         return $this->parameters;
     }
@@ -109,10 +95,9 @@ class Binding
      * Set the meta data for the binding.
      *
      * @param array $meta
-     *
      * @return void
      */
-    public function setMeta(array $meta)
+    public function setMeta(array $meta) : void
     {
         $this->meta = $meta;
     }
@@ -125,7 +110,7 @@ class Binding
      *
      * @return void
      */
-    public function addMeta($key, $value)
+    public function addMeta(string $key, $value) : void
     {
         $this->meta[$key] = $value;
     }
@@ -135,7 +120,7 @@ class Binding
      *
      * @return array
      */
-    public function getMeta()
+    public function getMeta() : array
     {
         return $this->meta;
     }

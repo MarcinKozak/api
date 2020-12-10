@@ -16,6 +16,6 @@ class AuthenticatedTest extends BaseTestCase
         $container = new Container;
         $container['api.auth'] = $auth;
 
-        $this->assertTrue((new Authenticated)->match($container));
+        self::assertTrue((new Authenticated)->match($container));
     }
 }

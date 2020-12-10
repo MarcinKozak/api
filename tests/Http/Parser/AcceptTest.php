@@ -15,9 +15,9 @@ class AcceptTest extends BaseTestCase
 
         $accept = $parser->parse($this->createRequest('foo', 'GET', ['accept' => 'application/vnd.foo.v2+xml']));
 
-        $this->assertSame('api', $accept['subtype']);
-        $this->assertSame('v1', $accept['version']);
-        $this->assertSame('json', $accept['format']);
+        self::assertSame('api', $accept['subtype']);
+        self::assertSame('v1', $accept['version']);
+        self::assertSame('json', $accept['format']);
     }
 
     public function testStrictlyParsingInvalidAcceptHeaderThrowsException()
@@ -36,9 +36,9 @@ class AcceptTest extends BaseTestCase
 
         $accept = $parser->parse($this->createRequest('foo', 'GET', ['accept' => 'application/vnd.api.v2+xml']));
 
-        $this->assertSame('api', $accept['subtype']);
-        $this->assertSame('v2', $accept['version']);
-        $this->assertSame('xml', $accept['format']);
+        self::assertSame('api', $accept['subtype']);
+        self::assertSame('v2', $accept['version']);
+        self::assertSame('xml', $accept['format']);
     }
 
     public function testApiVersionWithoutVSuffix()
@@ -47,9 +47,9 @@ class AcceptTest extends BaseTestCase
 
         $accept = $parser->parse($this->createRequest('foo', 'GET', ['accept' => 'application/vnd.api.1.0+xml']));
 
-        $this->assertSame('api', $accept['subtype']);
-        $this->assertSame('1.0', $accept['version']);
-        $this->assertSame('xml', $accept['format']);
+        self::assertSame('api', $accept['subtype']);
+        self::assertSame('1.0', $accept['version']);
+        self::assertSame('xml', $accept['format']);
     }
 
     public function testApiVersionWithHyphen()
@@ -58,9 +58,9 @@ class AcceptTest extends BaseTestCase
 
         $accept = $parser->parse($this->createRequest('foo', 'GET', ['accept' => 'application/vnd.api.1.0-beta+xml']));
 
-        $this->assertSame('api', $accept['subtype']);
-        $this->assertSame('1.0-beta', $accept['version']);
-        $this->assertSame('xml', $accept['format']);
+        self::assertSame('api', $accept['subtype']);
+        self::assertSame('1.0-beta', $accept['version']);
+        self::assertSame('xml', $accept['format']);
     }
 
     protected function createRequest($uri, $method, array $headers = [])

@@ -30,7 +30,7 @@ abstract class Throttle implements RateLimitThrottle
      *
      * @return int
      */
-    public function getLimit()
+    public function getLimit() : int
     {
         return $this->options['limit'];
     }
@@ -40,7 +40,7 @@ abstract class Throttle implements RateLimitThrottle
      *
      * @return int
      */
-    public function getExpires()
+    public function getExpires() : int
     {
         return $this->options['expires'];
     }

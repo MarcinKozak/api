@@ -36,12 +36,12 @@ class FactoryTest extends BaseTestCase
         $response = $this->factory->created();
         $responseWithLocation = $this->factory->created('test');
 
-        $this->assertSame($response->getStatusCode(), 201);
-        $this->assertFalse($response->headers->has('Location'));
+        self::assertSame($response->getStatusCode(), 201);
+        self::assertFalse($response->headers->has('Location'));
 
-        $this->assertSame($responseWithLocation->getStatusCode(), 201);
-        $this->assertTrue($responseWithLocation->headers->has('Location'));
-        $this->assertSame($responseWithLocation->headers->get('Location'), 'test');
+        self::assertSame($responseWithLocation->getStatusCode(), 201);
+        self::assertTrue($responseWithLocation->headers->has('Location'));
+        self::assertSame($responseWithLocation->headers->get('Location'), 'test');
     }
 
     public function testMakingAnAcceptedResponse()
@@ -51,38 +51,38 @@ class FactoryTest extends BaseTestCase
         $responseWithContent = $this->factory->accepted(null, 'testContent');
         $responseWithBoth = $this->factory->accepted('testHeader', 'testContent');
 
-        $this->assertSame($response->getStatusCode(), 202);
-        $this->assertFalse($response->headers->has('Location'));
-        $this->assertSame('', $response->getContent());
+        self::assertSame($response->getStatusCode(), 202);
+        self::assertFalse($response->headers->has('Location'));
+        self::assertSame('', $response->getContent());
 
-        $this->assertSame($responseWithLocation->getStatusCode(), 202);
-        $this->assertTrue($responseWithLocation->headers->has('Location'));
-        $this->assertSame($responseWithLocation->headers->get('Location'), 'testHeader');
-        $this->assertSame('', $responseWithLocation->getContent());
+        self::assertSame($responseWithLocation->getStatusCode(), 202);
+        self::assertTrue($responseWithLocation->headers->has('Location'));
+        self::assertSame($responseWithLocation->headers->get('Location'), 'testHeader');
+        self::assertSame('', $responseWithLocation->getContent());
 
-        $this->assertSame($responseWithContent->getStatusCode(), 202);
-        $this->assertFalse($responseWithContent->headers->has('Location'));
-        $this->assertSame('testContent', $responseWithContent->getContent());
+        self::assertSame($responseWithContent->getStatusCode(), 202);
+        self::assertFalse($responseWithContent->headers->has('Location'));
+        self::assertSame('testContent', $responseWithContent->getContent());
 
-        $this->assertSame($responseWithBoth->getStatusCode(), 202);
-        $this->assertTrue($responseWithBoth->headers->has('Location'));
-        $this->assertSame($responseWithBoth->headers->get('Location'), 'testHeader');
-        $this->assertSame('testContent', $responseWithBoth->getContent());
+        self::assertSame($responseWithBoth->getStatusCode(), 202);
+        self::assertTrue($responseWithBoth->headers->has('Location'));
+        self::assertSame($responseWithBoth->headers->get('Location'), 'testHeader');
+        self::assertSame('testContent', $responseWithBoth->getContent());
     }
 
     public function testMakingANoContentResponse()
     {
         $response = $this->factory->noContent();
-        $this->assertSame(204, $response->getStatusCode());
-        $this->assertSame('', $response->getContent());
+        self::assertSame(204, $response->getStatusCode());
+        self::assertSame('', $response->getContent());
     }
 
     public function testMakingCollectionRegistersUnderlyingClassWithTransformer()
     {
         $this->transformer->shouldReceive('register')->twice()->with(UserStub::class, 'test', [], null);
 
-        $this->assertInstanceOf(Collection::class, $this->factory->collection(new Collection([new UserStub('Jason')]), 'test')->getOriginalContent());
-        $this->assertInstanceOf(Collection::class, $this->factory->withCollection(new Collection([new UserStub('Jason')]), 'test')->getOriginalContent());
+        self::assertInstanceOf(Collection::class, $this->factory->collection(new Collection([new UserStub('Jason')]), 'test')->getOriginalContent());
+        self::assertInstanceOf(Collection::class, $this->factory->withCollection(new Collection([new UserStub('Jason')]), 'test')->getOriginalContent());
     }
 
     public function testMakingCollectionResponseWithThreeParameters()
@@ -91,13 +91,13 @@ class FactoryTest extends BaseTestCase
             return $param instanceof Closure;
         }));
 
-        $this->assertInstanceOf(Collection::class, $this->factory->collection(new Collection([new UserStub('Jason')]), 'test', function ($resource, $fractal) {
-            $this->assertInstanceOf(\League\Fractal\Resource\Collection::class, $resource);
-            $this->assertInstanceOf(Manager::class, $fractal);
+        self::assertInstanceOf(Collection::class, $this->factory->collection(new Collection([new UserStub('Jason')]), 'test', function ($resource, $fractal) {
+            self::assertInstanceOf(\League\Fractal\Resource\Collection::class, $resource);
+            self::assertInstanceOf(Manager::class, $fractal);
         })->getOriginalContent());
-        $this->assertInstanceOf(Collection::class, $this->factory->withCollection(new Collection([new UserStub('Jason')]), 'test', function ($resource, $fractal) {
-            $this->assertInstanceOf(\League\Fractal\Resource\Collection::class, $resource);
-            $this->assertInstanceOf(Manager::class, $fractal);
+        self::assertInstanceOf(Collection::class, $this->factory->withCollection(new Collection([new UserStub('Jason')]), 'test', function ($resource, $fractal) {
+            self::assertInstanceOf(\League\Fractal\Resource\Collection::class, $resource);
+            self::assertInstanceOf(Manager::class, $fractal);
         })->getOriginalContent());
     }
 
@@ -105,8 +105,8 @@ class FactoryTest extends BaseTestCase
     {
         $this->transformer->shouldReceive('register')->twice()->with(UserStub::class, 'test', [], null);
 
-        $this->assertInstanceOf(UserStub::class, $this->factory->item(new UserStub('Jason'), 'test')->getOriginalContent());
-        $this->assertInstanceOf(UserStub::class, $this->factory->withItem(new UserStub('Jason'), 'test')->getOriginalContent());
+        self::assertInstanceOf(UserStub::class, $this->factory->item(new UserStub('Jason'), 'test')->getOriginalContent());
+        self::assertInstanceOf(UserStub::class, $this->factory->withItem(new UserStub('Jason'), 'test')->getOriginalContent());
     }
 
     public function testMakingItemResponseWithThreeParameters()
@@ -115,13 +115,13 @@ class FactoryTest extends BaseTestCase
             return $param instanceof Closure;
         }));
 
-        $this->assertInstanceOf(UserStub::class, $this->factory->item(new UserStub('Jason'), 'test', function ($resource, $fractal) {
-            $this->assertInstanceOf(Item::class, $resource);
-            $this->assertInstanceOf(Manager::class, $fractal);
+        self::assertInstanceOf(UserStub::class, $this->factory->item(new UserStub('Jason'), 'test', function ($resource, $fractal) {
+            self::assertInstanceOf(Item::class, $resource);
+            self::assertInstanceOf(Manager::class, $fractal);
         })->getOriginalContent());
-        $this->assertInstanceOf(UserStub::class, $this->factory->withItem(new UserStub('Jason'), 'test', function ($resource, $fractal) {
-            $this->assertInstanceOf(Item::class, $resource);
-            $this->assertInstanceOf(Manager::class, $fractal);
+        self::assertInstanceOf(UserStub::class, $this->factory->withItem(new UserStub('Jason'), 'test', function ($resource, $fractal) {
+            self::assertInstanceOf(Item::class, $resource);
+            self::assertInstanceOf(Manager::class, $fractal);
         })->getOriginalContent());
     }
 
@@ -129,8 +129,8 @@ class FactoryTest extends BaseTestCase
     {
         $this->transformer->shouldReceive('register')->twice()->with(UserStub::class, 'test', [], null);
 
-        $this->assertInstanceOf(Paginator::class, $this->factory->paginator(new Paginator([new UserStub('Jason')], 1), 'test')->getOriginalContent());
-        $this->assertInstanceOf(Paginator::class, $this->factory->withPaginator(new Paginator([new UserStub('Jason')], 1), 'test')->getOriginalContent());
+        self::assertInstanceOf(Paginator::class, $this->factory->paginator(new Paginator([new UserStub('Jason')], 1), 'test')->getOriginalContent());
+        self::assertInstanceOf(Paginator::class, $this->factory->withPaginator(new Paginator([new UserStub('Jason')], 1), 'test')->getOriginalContent());
     }
 
     public function testNotFoundThrowsHttpException()
@@ -178,12 +178,12 @@ class FactoryTest extends BaseTestCase
     public function testMakingArrayResponse()
     {
         $response = $this->factory->array(['foo' => 'bar']);
-        $this->assertSame('{"foo":"bar"}', $response->getContent());
+        self::assertSame('{"foo":"bar"}', $response->getContent());
     }
 
     public function testPrefixingWithCallsMethodsCorrectly()
     {
         $response = $this->factory->withArray(['foo' => 'bar']);
-        $this->assertSame('{"foo":"bar"}', $response->getContent());
+        self::assertSame('{"foo":"bar"}', $response->getContent());
     }
 }

@@ -3,6 +3,7 @@
 namespace Dingo\Api\Routing\Adapter;
 
 use ArrayIterator;
+use Dingo\Api\Routing\Route;
 use ReflectionClass;
 use FastRoute\Dispatcher;
 use FastRoute\RouteParser;
@@ -13,6 +14,7 @@ use FastRoute\RouteCollector;
 use Laravel\Lumen\Application;
 use Dingo\Api\Contract\Routing\Adapter;
 use Dingo\Api\Exception\UnknownVersionException;
+use Illuminate\Routing\Route as BaseRoute;
 
 class Lumen implements Adapter
 {
@@ -394,11 +396,11 @@ class Lumen implements Adapter
     /**
      * Prepare a route for serialization.
      *
-     * @param mixed $route
+     * @param BaseRoute $route
      *
-     * @return mixed
+     * @return void
      */
-    public function prepareRouteForSerialization($route)
+    public function prepareRouteForSerialization(BaseRoute $route) : void
     {
         // Route caching is not implemented for Lumen.
     }

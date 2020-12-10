@@ -43,10 +43,8 @@ class Accept implements Parser
      * @param string $subtype
      * @param string $version
      * @param string $format
-     *
-     * @return void
      */
-    public function __construct($standardsTree, $subtype, $version, $format)
+    public function __construct(string $standardsTree, string $subtype, string $version, string $format)
     {
         $this->standardsTree = $standardsTree;
         $this->subtype = $subtype;
@@ -58,14 +56,14 @@ class Accept implements Parser
      * Parse the accept header on the incoming request. If strict is enabled
      * then the accept header must be available and must be a valid match.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param bool                     $strict
+     * @param Request $request
+     * @param bool   $strict
      *
-     * @throws \Symfony\Component\HttpKernel\Exception\BadRequestHttpException
+     * @throws BadRequestHttpException
      *
      * @return array
      */
-    public function parse(Request $request, $strict = false)
+    public function parse(Request $request, bool $strict = false) : array
     {
         $pattern = '/application\/'.$this->standardsTree.'\.('.$this->subtype.')\.([\w\d\.\-]+)\+([\w]+)/';
 

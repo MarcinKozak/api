@@ -2,6 +2,7 @@
 
 namespace Dingo\Api\Tests\Routing\Adapter;
 
+use Dingo\Api\Contract\Routing\Adapter;
 use Dingo\Api\Exception\Handler;
 use Dingo\Api\Http;
 use Dingo\Api\Routing\Adapter\Laravel;
@@ -9,14 +10,13 @@ use Dingo\Api\Routing\Adapter\Lumen;
 use Dingo\Api\Routing\Router;
 use Dingo\Api\Tests\BaseTestCase;
 use Dingo\Api\Tests\Stubs\MiddlewareStub;
-use Illuminate\Contracts\Container\Container;
-use Laravel\Lumen\Application;
+use Illuminate\Container\Container;
 use Mockery as m;
 
 abstract class BaseAdapterTest extends BaseTestCase
 {
     /**
-     * @var Container|Application
+     * @var Container
      */
     protected $container;
     /**
@@ -35,7 +35,7 @@ abstract class BaseAdapterTest extends BaseTestCase
     public function setUp(): void
     {
         $this->container = $this->getContainerInstance();
-        $this->container['Illuminate\Container\Container'] = $this->container;
+        $this->container[\Illuminate\Container\Container::class] = $this->container;
         $this->container['api.auth'] = new MiddlewareStub;
         $this->container['api.limiting'] = new MiddlewareStub;
         $this->container['api.controllers'] = new MiddlewareStub;
@@ -46,22 +46,28 @@ abstract class BaseAdapterTest extends BaseTestCase
         $this->adapter = $this->getAdapterInstance();
         $this->exception = m::mock(Handler::class);
         $this->router = new Router($this->adapter, $this->exception, $this->container, null, null);
-        app()->instance(\Illuminate\Routing\Router::class, $this->adapter, true);
+        app()->instance(\Illuminate\Routing\Router::class, $this->adapter);
 
         Http\Response::setFormatters(['json' => new Http\Response\Format\Json]);
     }
 
     /**
-     * @return Container|Application
+     * @return Container
      */
-    abstract public function getContainerInstance();
+    abstract public function getContainerInstance() : Container;
 
     /**
-     * @return Laravel|Lumen
+     * @return Adapter
      */
-    abstract public function getAdapterInstance();
+    abstract public function getAdapterInstance() : Adapter;
 
-    protected function createRequest($uri, $method, array $headers = [])
+    /**
+     * @param string $uri
+     * @param string $method
+     * @param array $headers
+     * @return Http\Request
+     */
+    protected function createRequest(string $uri, string $method, array $headers = []) : Http\Request
     {
         $request = Http\Request::create($uri, $method);
 
@@ -72,7 +78,7 @@ abstract class BaseAdapterTest extends BaseTestCase
         return $this->container['request'] = $request;
     }
 
-    public function testBasicRouteVersions()
+    public function testBasicRouteVersions() : void
     {
         $this->router->version('v1', function () {
             $this->router->get('foo', function () {
@@ -103,39 +109,39 @@ abstract class BaseAdapterTest extends BaseTestCase
 
         $this->createRequest('/', 'GET');
 
-        $this->assertArrayHasKey('v1', $this->router->getRoutes(), 'No routes were registered for version 1.');
-        $this->assertArrayHasKey('v2', $this->router->getRoutes(), 'No routes were registered for version 2.');
-        $this->assertArrayHasKey('v3', $this->router->getRoutes(), 'No routes were registered for version 3.');
+        self::assertArrayHasKey('v1', $this->router->getRoutes(), 'No routes were registered for version 1.');
+        self::assertArrayHasKey('v2', $this->router->getRoutes(), 'No routes were registered for version 2.');
+        self::assertArrayHasKey('v3', $this->router->getRoutes(), 'No routes were registered for version 3.');
 
         $request = $this->createRequest('/foo', 'GET', ['accept' => 'application/vnd.api.v1+json']);
-        $this->assertSame('foo', $this->router->dispatch($request)->getContent());
+        self::assertSame('foo', $this->router->dispatch($request)->getContent());
 
         $request = $this->createRequest('/foo/', 'GET', ['accept' => 'application/vnd.api.v1+json']);
-        $this->assertSame('foo', $this->router->dispatch($request)->getContent(), 'Could not dispatch request with trailing slash.');
+        self::assertSame('foo', $this->router->dispatch($request)->getContent(), 'Could not dispatch request with trailing slash.');
 
         $request = $this->createRequest('/foo', 'GET', ['accept' => 'application/vnd.api.v2+json']);
-        $this->assertSame('bar', $this->router->dispatch($request)->getContent());
+        self::assertSame('bar', $this->router->dispatch($request)->getContent());
 
         $request = $this->createRequest('/foo', 'GET', ['accept' => 'application/vnd.api.v3+json']);
-        $this->assertSame('bar', $this->router->dispatch($request)->getContent());
+        self::assertSame('bar', $this->router->dispatch($request)->getContent());
 
         $request = $this->createRequest('/foo', 'POST', ['accept' => 'application/vnd.api.v1+json']);
-        $this->assertSame('posted', $this->router->dispatch($request)->getContent());
+        self::assertSame('posted', $this->router->dispatch($request)->getContent());
 
         $request = $this->createRequest('/foo', 'PATCH', ['accept' => 'application/vnd.api.v1+json']);
-        $this->assertSame('patched', $this->router->dispatch($request)->getContent());
+        self::assertSame('patched', $this->router->dispatch($request)->getContent());
 
         $request = $this->createRequest('/foo', 'DELETE', ['accept' => 'application/vnd.api.v1+json']);
-        $this->assertSame('deleted', $this->router->dispatch($request)->getContent());
+        self::assertSame('deleted', $this->router->dispatch($request)->getContent());
 
         $request = $this->createRequest('/foo', 'PUT', ['accept' => 'application/vnd.api.v1+json']);
-        $this->assertSame('put', $this->router->dispatch($request)->getContent());
+        self::assertSame('put', $this->router->dispatch($request)->getContent());
 
         $request = $this->createRequest('/foo', 'options', ['accept' => 'application/vnd.api.v1+json']);
-        $this->assertSame('options', $this->router->dispatch($request)->getContent());
+        self::assertSame('options', $this->router->dispatch($request)->getContent());
     }
 
-    public function testAdapterDispatchesRequestsThroughRouter()
+    public function testAdapterDispatchesRequestsThroughRouter() : void
     {
         $this->container['request'] = Http\Request::create('/foo', 'GET');
 
@@ -147,10 +153,10 @@ abstract class BaseAdapterTest extends BaseTestCase
 
         $response = $this->router->dispatch($this->container['request']);
 
-        $this->assertSame('foo', $response->getContent());
+        self::assertSame('foo', $response->getContent());
     }
 
-    public function testRoutesWithPrefix()
+    public function testRoutesWithPrefix() : void
     {
         $this->router->version('v1', ['prefix' => 'foo/bar'], function () {
             $this->router->get('foo', function () {
@@ -165,10 +171,10 @@ abstract class BaseAdapterTest extends BaseTestCase
         });
 
         $request = $this->createRequest('/foo/bar/foo', 'GET', ['accept' => 'application/vnd.api.v2+json']);
-        $this->assertSame('bar', $this->router->dispatch($request)->getContent(), 'Router could not dispatch prefixed routes.');
+        self::assertSame('bar', $this->router->dispatch($request)->getContent(), 'Router could not dispatch prefixed routes.');
     }
 
-    public function testRoutesWithDomains()
+    public function testRoutesWithDomains() : void
     {
         $this->router->version('v1', ['domain' => 'foo.bar'], function () {
             $this->router->get('foo', function () {
@@ -183,10 +189,10 @@ abstract class BaseAdapterTest extends BaseTestCase
         });
 
         $request = $this->createRequest('http://foo.bar/foo', 'GET', ['accept' => 'application/vnd.api.v2+json']);
-        $this->assertSame('bar', $this->router->dispatch($request)->getContent(), 'Router could not dispatch domain routes.');
+        self::assertSame('bar', $this->router->dispatch($request)->getContent(), 'Router could not dispatch domain routes.');
     }
 
-    public function testPointReleaseVersions()
+    public function testPointReleaseVersions() : void
     {
         $this->router->version('v1.1', function () {
             $this->router->get('foo', function () {
@@ -201,13 +207,13 @@ abstract class BaseAdapterTest extends BaseTestCase
         });
 
         $request = $this->createRequest('/foo', 'GET', ['accept' => 'application/vnd.api.v1.1+json']);
-        $this->assertSame('foo', $this->router->dispatch($request)->getContent(), 'Router does not support point release versions.');
+        self::assertSame('foo', $this->router->dispatch($request)->getContent(), 'Router does not support point release versions.');
 
         $request = $this->createRequest('/bar', 'GET', ['accept' => 'application/vnd.api.v2.0.1+json']);
-        $this->assertSame('bar', $this->router->dispatch($request)->getContent(), 'Router does not support point release versions.');
+        self::assertSame('bar', $this->router->dispatch($request)->getContent(), 'Router does not support point release versions.');
     }
 
-    public function testRoutingResources()
+    public function testRoutingResources() : void
     {
         $this->router->version('v1', ['namespace' => '\Dingo\Api\Tests\Stubs'], function () {
             $this->router->resources([
@@ -217,10 +223,10 @@ abstract class BaseAdapterTest extends BaseTestCase
 
         $request = $this->createRequest('/bar', 'GET', ['accept' => 'application/vnd.api.v1+json']);
 
-        $this->assertSame('foo', $this->router->dispatch($request)->getContent(), 'Router did not register controller correctly.');
+        self::assertSame('foo', $this->router->dispatch($request)->getContent(), 'Router did not register controller correctly.');
     }
 
-    public function testIterableRoutes()
+    public function testIterableRoutes() : void
     {
         $this->router->version('v1', ['namespace' => '\Dingo\Api\Tests\Stubs'], function () {
             $this->router->post('/', ['uses' => 'RoutingControllerStub@index']);
@@ -228,7 +234,7 @@ abstract class BaseAdapterTest extends BaseTestCase
         });
 
         $routes = $this->adapter->getIterableRoutes();
-        $this->assertTrue(array_key_exists('v1', (array) $routes));
-        $this->assertSame(2, count($routes['v1']));
+        self::assertTrue(array_key_exists('v1', (array) $routes));
+        self::assertCount(2, $routes['v1']);
     }
 }

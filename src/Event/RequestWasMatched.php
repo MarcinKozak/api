@@ -10,24 +10,21 @@ class RequestWasMatched
     /**
      * Request instance.
      *
-     * @var \Dingo\Api\Http\Request
+     * @var Request
      */
     public $request;
 
     /**
      * Application instance.
      *
-     * @var \Illuminate\Contracts\Container\Container
+     * @var Container
      */
     public $app;
 
     /**
-     * Create a new request was matched event.
-     *
-     * @param \Dingo\Api\Http\Request                   $request
-     * @param \Illuminate\Contracts\Container\Container $app
-     *
-     * @return void
+     * RequestWasMatched constructor.
+     * @param Request $request
+     * @param Container $app
      */
     public function __construct(Request $request, Container $app)
     {

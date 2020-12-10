@@ -2,7 +2,12 @@
 
 namespace Dingo\Api\Facade;
 
+use Dingo\Api\Auth\Auth;
 use Dingo\Api\Http\InternalRequest;
+use Dingo\Api\Http\Response\Factory;
+use Dingo\Api\Routing\Router;
+use Dingo\Api\Transformer\Factory as TransformerFactory;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Facade;
 
 class API extends Facade
@@ -12,7 +17,7 @@ class API extends Facade
      *
      * @return string
      */
-    protected static function getFacadeAccessor()
+    protected static function getFacadeAccessor() : string
     {
         return 'api.dispatcher';
     }
@@ -30,6 +35,14 @@ class API extends Facade
     }
 
     /**
+     * @return TransformerFactory
+     */
+    public static function transformer() : TransformerFactory
+    {
+        return static::$app['api.transformer'];
+    }
+
+    /**
      * Register a class transformer.
      *
      * @param string          $class
@@ -37,17 +50,17 @@ class API extends Facade
      *
      * @return \Dingo\Api\Transformer\Binding
      */
-    public static function transform($class, $transformer)
+    public static function transform(string $class, $transformer)
     {
-        return static::$app['api.transformer']->register($class, $transformer);
+        return static::transformer()->register($class, $transformer);
     }
 
     /**
      * Get the authenticator.
      *
-     * @return \Dingo\Api\Auth\Auth
+     * @return Auth
      */
-    public static function auth()
+    public static function auth() : Auth
     {
         return static::$app['api.auth'];
     }
@@ -55,11 +68,11 @@ class API extends Facade
     /**
      * Get the authenticated user.
      *
-     * @return \Illuminate\Auth\GenericUser|\Illuminate\Database\Eloquent\Model
+     * @return ?Authenticatable
      */
-    public static function user()
+    public static function user() : ?Authenticatable
     {
-        return static::$app['api.auth']->user();
+        return static::auth()->user();
     }
 
     /**
@@ -67,17 +80,17 @@ class API extends Facade
      *
      * @return bool
      */
-    public static function internal()
+    public static function internal() : bool
     {
-        return static::$app['api.router']->getCurrentRequest() instanceof InternalRequest;
+        return static::router()->getCurrentRequest() instanceof InternalRequest;
     }
 
     /**
      * Get the response factory to begin building a response.
      *
-     * @return \Dingo\Api\Http\Response\Factory
+     * @return Factory
      */
-    public static function response()
+    public static function response() : Factory
     {
         return static::$app['api.http.response'];
     }
@@ -85,9 +98,9 @@ class API extends Facade
     /**
      * Get the API router instance.
      *
-     * @return \Dingo\Api\Routing\Router
+     * @return Router
      */
-    public static function router()
+    public static function router() : Router
     {
         return static::$app['api.router'];
     }
@@ -100,7 +113,7 @@ class API extends Facade
      *
      * @return string
      */
-    public static function route($routeName, $apiVersion = 'v1')
+    public static function route(string $routeName, string $apiVersion = 'v1') : string
     {
         return static::$app['api.url']->version($apiVersion)->route($routeName);
     }

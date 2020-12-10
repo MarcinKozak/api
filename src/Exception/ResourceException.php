@@ -12,22 +12,19 @@ class ResourceException extends HttpException implements MessageBagErrors
     /**
      * MessageBag errors.
      *
-     * @var \Illuminate\Support\MessageBag
+     * @var MessageBag
      */
     protected $errors;
 
     /**
-     * Create a new resource exception instance.
-     *
-     * @param string                               $message
-     * @param \Illuminate\Support\MessageBag|array $errors
-     * @param \Exception                           $previous
-     * @param array                                $headers
-     * @param int                                  $code
-     *
-     * @return void
+     * ResourceException constructor.
+     * @param null $message
+     * @param null $errors
+     * @param Exception|null $previous
+     * @param array $headers
+     * @param int|null $code
      */
-    public function __construct($message = null, $errors = null, Exception $previous = null, $headers = [], $code = 0)
+    public function __construct($message = null, $errors = null, Exception $previous = null, $headers = [], ?int $code = 0)
     {
         if (is_null($errors)) {
             $this->errors = new MessageBag;
@@ -41,9 +38,9 @@ class ResourceException extends HttpException implements MessageBagErrors
     /**
      * Get the errors message bag.
      *
-     * @return \Illuminate\Support\MessageBag
+     * @return MessageBag
      */
-    public function getErrors()
+    public function getErrors() : MessageBag
     {
         return $this->errors;
     }
@@ -53,7 +50,7 @@ class ResourceException extends HttpException implements MessageBagErrors
      *
      * @return bool
      */
-    public function hasErrors()
+    public function hasErrors() : bool
     {
         return ! $this->errors->isEmpty();
     }

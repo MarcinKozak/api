@@ -29,11 +29,11 @@ class FactoryTest extends BaseTestCase
 
     public function testResponseIsTransformable()
     {
-        $this->assertFalse($this->factory->transformableResponse(new UserStub('Jason'), new UserTransformerStub));
+        self::assertFalse($this->factory->transformableResponse(new UserStub('Jason'), new UserTransformerStub));
 
         $this->factory->register(UserStub::class, new UserTransformerStub);
 
-        $this->assertTrue($this->factory->transformableResponse(new UserStub('Jason'), new UserTransformerStub));
+        self::assertTrue($this->factory->transformableResponse(new UserStub('Jason'), new UserTransformerStub));
     }
 
     public function testRegisterParameterOrder()
@@ -41,22 +41,22 @@ class FactoryTest extends BaseTestCase
         // Third parameter is parameters and fourth is callback.
         $binding = $this->factory->register(UserStub::class, new UserTransformerStub,
             ['foo' => 'bar'], function ($foo) {
-                $this->assertSame('foo', $foo);
+                self::assertSame('foo', $foo);
             });
 
         $binding->fireCallback('foo');
-        $this->assertSame(['foo' => 'bar'], $binding->getParameters());
+        self::assertSame(['foo' => 'bar'], $binding->getParameters());
 
         // Third parameter is parameters and fourth is null.
         $binding = $this->factory->register(UserStub::class, new UserTransformerStub,
             ['foo' => 'bar']);
 
-        $this->assertSame(['foo' => 'bar'], $binding->getParameters());
+        self::assertSame(['foo' => 'bar'], $binding->getParameters());
 
         // Third parameter is an empty array and fourth is callback.
         $binding = $this->factory->register(UserStub::class, new UserTransformerStub, [],
             function ($foo) {
-                $this->assertSame('foo', $foo);
+                self::assertSame('foo', $foo);
             });
 
         $binding->fireCallback('foo');
@@ -64,9 +64,9 @@ class FactoryTest extends BaseTestCase
 
     public function testResponseIsTransformableType()
     {
-        $this->assertFalse($this->factory->transformableType(['foo' => 'bar']));
-        $this->assertTrue($this->factory->transformableType('Foo'));
-        $this->assertTrue($this->factory->transformableType((object) ['foo' => 'bar']));
+        self::assertFalse($this->factory->transformableType(['foo' => 'bar']));
+        self::assertTrue($this->factory->transformableType('Foo'));
+        self::assertTrue($this->factory->transformableType((object) ['foo' => 'bar']));
     }
 
     public function testTransformingResponse()
@@ -75,7 +75,7 @@ class FactoryTest extends BaseTestCase
 
         $response = $this->factory->transform(new UserStub('Jason'));
 
-        $this->assertSame(['name' => 'Jason'], $response);
+        self::assertSame(['name' => 'Jason'], $response);
     }
 
     public function testTransformingCollectionResponse()
@@ -84,7 +84,7 @@ class FactoryTest extends BaseTestCase
 
         $response = $this->factory->transform(new Collection([new UserStub('Jason'), new UserStub('Bob')]));
 
-        $this->assertSame([['name' => 'Jason'], ['name' => 'Bob']], $response);
+        self::assertSame([['name' => 'Jason'], ['name' => 'Bob']], $response);
     }
 
     public function testTransforingWithIlluminateRequest()
@@ -98,7 +98,7 @@ class FactoryTest extends BaseTestCase
 
         $response = $factory->transform(new UserStub('Jason'));
 
-        $this->assertSame(['name' => 'Jason'], $response);
+        self::assertSame(['name' => 'Jason'], $response);
     }
 
     public function testTransformingWithNoTransformerThrowsException()

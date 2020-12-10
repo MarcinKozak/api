@@ -31,20 +31,20 @@ class RequestValidatorTest extends BaseTestCase
     {
         $this->validator->replace([]);
 
-        $this->assertFalse($this->validator->validateRequest(Request::create('foo', 'GET')), 'Validation passed when there were no validators.');
+        self::assertFalse($this->validator->validateRequest(Request::create('foo', 'GET')), 'Validation passed when there were no validators.');
     }
 
     public function testValidationFails()
     {
         $this->validator->replace([HttpValidatorStub::class]);
 
-        $this->assertFalse($this->validator->validateRequest(Request::create('foo', 'GET')), 'Validation passed when given a GET request.');
+        self::assertFalse($this->validator->validateRequest(Request::create('foo', 'GET')), 'Validation passed when given a GET request.');
     }
 
     public function testValidationPasses()
     {
         $this->validator->replace([HttpValidatorStub::class]);
 
-        $this->assertTrue($this->validator->validateRequest(Request::create('foo', 'POST')), 'Validation failed when given a POST request.');
+        self::assertTrue($this->validator->validateRequest(Request::create('foo', 'POST')), 'Validation failed when given a POST request.');
     }
 }

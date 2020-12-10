@@ -3,9 +3,10 @@
 namespace Dingo\Api\Http\Middleware;
 
 use Closure;
-use Dingo\Api\Http\Response;
-use Dingo\Api\Routing\Router;
 use Dingo\Api\Http\InternalRequest;
+use Dingo\Api\Http\Response;
+use Dingo\Api\Routing\Route;
+use Dingo\Api\Routing\Router;
 use Dingo\Api\Http\RateLimit\Handler;
 use Dingo\Api\Exception\RateLimitExceededException;
 
@@ -14,22 +15,22 @@ class RateLimit
     /**
      * Router instance.
      *
-     * @var \Dingo\Api\Routing\Router
+     * @var Router
      */
     protected $router;
 
     /**
      * Rate limit handler instance.
      *
-     * @var \Dingo\Api\Http\RateLimit\Handler
+     * @var Handler
      */
     protected $handler;
 
     /**
      * Create a new rate limit middleware instance.
      *
-     * @param \Dingo\Api\Routing\Router         $router
-     * @param \Dingo\Api\Http\RateLimit\Handler $handler
+     * @param Router $router
+     * @param Handler $handler
      *
      * @return void
      */
@@ -42,20 +43,30 @@ class RateLimit
     /**
      * Perform rate limiting before a request is executed.
      *
-     * @param \Dingo\Api\Http\Request $request
-     * @param \Closure                $next
-     *
-     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
+     * @param Request $request
+     * @param Closure $next
      *
      * @return mixed
      */
-    public function handle($request, Closure $next)
+    public function handle(Request $request, Closure $next)
     {
         if ($request instanceof InternalRequest) {
             return $next($request);
         }
 
         $route = $this->router->getCurrentRoute();
+
+        if($route instanceof Route) {
+            if ($route->hasThrottle()) {
+                $this->handler->setThrottle($route->getThrottle());
+            }
+
+            $this->handler->rateLimitRequest($request, $route->getRateLimit(), $route->getRateLimitExpiration());
+
+            if ($this->handler->exceededRateLimit()) {
+                throw new RateLimitExceededException('You have exceeded your rate limit.', null, $this->getHeaders());
+            }
+        }
 
         if ($route->hasThrottle()) {
             $this->handler->setThrottle($route->getThrottle());

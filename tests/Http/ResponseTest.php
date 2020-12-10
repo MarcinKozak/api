@@ -41,8 +41,8 @@ class ResponseTest extends BaseTestCase
 
         $response = new Response($object);
 
-        $this->assertNull($response->getContent());
-        $this->assertSame($object, $response->getOriginalContent());
+        self::assertNull($response->getContent());
+        self::assertSame($object, $response->getOriginalContent());
     }
 
     public function testAddingAndSettingMetaCallsUnderlyingTransformerBinding()
@@ -53,7 +53,7 @@ class ResponseTest extends BaseTestCase
         $response->setMeta(['foo' => 'bar']);
         $response->meta('bing', 'bang');
 
-        $this->assertSame(['foo' => 'bar', 'bing' => 'bang'], $response->getMeta());
+        self::assertSame(['foo' => 'bar', 'bing' => 'bang'], $response->getMeta());
     }
 
     public function testBuildingWithCustomStatusCodeAndHeaders()
@@ -62,8 +62,8 @@ class ResponseTest extends BaseTestCase
         $response->statusCode(302);
         $response->header('Foo', 'Bar');
 
-        $this->assertSame('Bar', $response->headers->get('Foo'));
-        $this->assertSame(302, $response->getStatusCode());
+        self::assertSame('Bar', $response->headers->get('Foo'));
+        self::assertSame(302, $response->getStatusCode());
     }
 
     public function testChangingContentWithEvents()
@@ -76,7 +76,7 @@ class ResponseTest extends BaseTestCase
 
         $response = new Response(['foo' => 'bar']);
 
-        $this->assertSame('{"foo":"bam!"}', $response->morph('json')->getContent());
+        self::assertSame('{"foo":"bam!"}', $response->morph('json')->getContent());
 
         $this->events->forget(ResponseWasMorphed::class);
     }
@@ -91,7 +91,7 @@ class ResponseTest extends BaseTestCase
 
         $response = new Response(['foo' => 'bar']);
 
-        $this->assertSame('bar', $response->morph('json')->headers->get('x-foo'));
+        self::assertSame('bar', $response->morph('json')->headers->get('x-foo'));
 
         $this->events->forget(ResponseIsMorphing::class);
     }

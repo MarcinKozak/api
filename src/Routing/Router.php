@@ -6,12 +6,15 @@ use Closure;
 use Dingo\Api\Contract\Debug\ExceptionHandler;
 use Dingo\Api\Contract\Routing\Adapter;
 use Dingo\Api\Http\InternalRequest;
+use Dingo\Api\Http\Parser\Accept;
 use Dingo\Api\Http\Request;
 use Dingo\Api\Http\Response;
 use Exception;
 use Illuminate\Container\Container;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response as IlluminateResponse;
+use Illuminate\Routing\Route as IlluminateRoute;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -22,28 +25,28 @@ class Router
     /**
      * Routing adapter instance.
      *
-     * @var \Dingo\Api\Contract\Routing\Adapter
+     * @var Adapter
      */
     protected $adapter;
 
     /**
      * Accept parser instance.
      *
-     * @var \Dingo\Api\Http\Parser\Accept
+     * @var Accept
      */
     protected $accept;
 
     /**
      * Exception handler instance.
      *
-     * @var \Dingo\Api\Contract\Debug\ExceptionHandler
+     * @var ExceptionHandler
      */
     protected $exception;
 
     /**
      * Application container instance.
      *
-     * @var \Illuminate\Container\Container
+     * @var Container
      */
     protected $container;
 
@@ -64,7 +67,7 @@ class Router
     /**
      * The current route being dispatched.
      *
-     * @var \Dingo\Api\Routing\Route
+     * @var Route
      */
     protected $currentRoute;
 
@@ -90,17 +93,14 @@ class Router
     protected $prefix;
 
     /**
-     * Create a new router instance.
-     *
-     * @param \Dingo\Api\Contract\Routing\Adapter        $adapter
-     * @param \Dingo\Api\Contract\Debug\ExceptionHandler $exception
-     * @param \Illuminate\Container\Container            $container
-     * @param string                                     $domain
-     * @param string                                     $prefix
-     *
-     * @return void
+     * Router constructor.
+     * @param Adapter $adapter
+     * @param ExceptionHandler $exception
+     * @param Container $container
+     * @param string|null $domain
+     * @param string|null $prefix
      */
-    public function __construct(Adapter $adapter, ExceptionHandler $exception, Container $container, $domain, $prefix)
+    public function __construct(Adapter $adapter, ExceptionHandler $exception, Container $container, ?string $domain, ?string $prefix)
     {
         $this->adapter = $adapter;
         $this->exception = $exception;
@@ -123,9 +123,9 @@ class Router
      *
      * @return void
      */
-    public function version($version, $second, $third = null)
+    public function version($version, $second, $third = null) : void
     {
-        if (func_num_args() == 2) {
+        if (func_num_args() === 2) {
             [$version, $callback, $attributes] = array_merge(func_get_args(), [[]]);
         } else {
             [$version, $attributes, $callback] = func_get_args();
@@ -144,7 +144,7 @@ class Router
      *
      * @return void
      */
-    public function group(array $attributes, $callback)
+    public function group(array $attributes, callable $callback) : void
     {
         if (! isset($attributes['conditionalRequest'])) {
             $attributes['conditionalRequest'] = $this->conditionalRequest;
@@ -154,9 +154,9 @@ class Router
 
         if (! isset($attributes['version'])) {
             throw new RuntimeException('A version is required for an API group definition.');
-        } else {
-            $attributes['version'] = (array) $attributes['version'];
         }
+
+        $attributes['version'] = (array) $attributes['version'];
 
         if ((! isset($attributes['prefix']) || empty($attributes['prefix'])) && isset($this->prefix)) {
             $attributes['prefix'] = $this->prefix;
@@ -168,7 +168,7 @@ class Router
 
         $this->groupStack[] = $attributes;
 
-        call_user_func($callback, $this);
+        $callback($this);
 
         array_pop($this->groupStack);
     }
@@ -179,11 +179,11 @@ class Router
      * @param string                $uri
      * @param array|string|callable $action
      *
-     * @return mixed
+     * @return void
      */
-    public function get($uri, $action)
+    public function get(string $uri, $action) : void
     {
-        return $this->addRoute(['GET', 'HEAD'], $uri, $action);
+        $this->addRoute(['GET', 'HEAD'], $uri, $action);
     }
 
     /**
@@ -192,11 +192,11 @@ class Router
      * @param string                $uri
      * @param array|string|callable $action
      *
-     * @return mixed
+     * @return void
      */
-    public function post($uri, $action)
+    public function post(string $uri, $action) : void
     {
-        return $this->addRoute('POST', $uri, $action);
+        $this->addRoute('POST', $uri, $action);
     }
 
     /**
@@ -205,11 +205,11 @@ class Router
      * @param string                $uri
      * @param array|string|callable $action
      *
-     * @return mixed
+     * @return void
      */
-    public function put($uri, $action)
+    public function put(string $uri, $action) : void
     {
-        return $this->addRoute('PUT', $uri, $action);
+        $this->addRoute('PUT', $uri, $action);
     }
 
     /**
@@ -218,11 +218,11 @@ class Router
      * @param string                $uri
      * @param array|string|callable $action
      *
-     * @return mixed
+     * @return void
      */
-    public function patch($uri, $action)
+    public function patch(string $uri, $action) : void
     {
-        return $this->addRoute('PATCH', $uri, $action);
+        $this->addRoute('PATCH', $uri, $action);
     }
 
     /**
@@ -231,11 +231,11 @@ class Router
      * @param string                $uri
      * @param array|string|callable $action
      *
-     * @return mixed
+     * @return void
      */
-    public function delete($uri, $action)
+    public function delete(string $uri, $action) : void
     {
-        return $this->addRoute('DELETE', $uri, $action);
+        $this->addRoute('DELETE', $uri, $action);
     }
 
     /**
@@ -244,11 +244,11 @@ class Router
      * @param string                $uri
      * @param array|string|callable $action
      *
-     * @return mixed
+     * @return void
      */
-    public function options($uri, $action)
+    public function options(string $uri, $action) : void
     {
-        return $this->addRoute('OPTIONS', $uri, $action);
+        $this->addRoute('OPTIONS', $uri, $action);
     }
 
     /**
@@ -257,13 +257,13 @@ class Router
      * @param string                $uri
      * @param array|string|callable $action
      *
-     * @return mixed
+     * @return void
      */
-    public function any($uri, $action)
+    public function any(string $uri, $action) : void
     {
         $verbs = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
-        return $this->addRoute($verbs, $uri, $action);
+        $this->addRoute($verbs, $uri, $action);
     }
 
     /**
@@ -273,11 +273,11 @@ class Router
      * @param string                $uri
      * @param array|string|callable $action
      *
-     * @return mixed
+     * @return void
      */
-    public function match($methods, $uri, $action)
+    public function match($methods, string $uri, $action) : void
     {
-        return $this->addRoute(array_map('strtoupper', (array) $methods), $uri, $action);
+        $this->addRoute(array_map('strtoupper', (array) $methods), $uri, $action);
     }
 
     /**
@@ -286,8 +286,9 @@ class Router
      * @param array $resources
      *
      * @return void
+     * @throws BindingResolutionException
      */
-    public function resources(array $resources)
+    public function resources(array $resources) : void
     {
         foreach ($resources as $name => $resource) {
             $options = [];
@@ -305,11 +306,12 @@ class Router
      *
      * @param string $name
      * @param string $controller
-     * @param array  $options
+     * @param array $options
      *
      * @return void
+     * @throws BindingResolutionException
      */
-    public function resource($name, $controller, array $options = [])
+    public function resource(string $name, string $controller, array $options = []) : void
     {
         if ($this->container->bound(ResourceRegistrar::class)) {
             $registrar = $this->container->make(ResourceRegistrar::class);
@@ -327,24 +329,25 @@ class Router
      * @param string                $uri
      * @param string|array|callable $action
      *
-     * @return mixed
+     * @return void
      */
-    public function addRoute($methods, $uri, $action)
+    public function addRoute($methods, string $uri, $action) : void
     {
         if (is_string($action)) {
             $action = ['uses' => $action, 'controller' => $action];
         } elseif ($action instanceof Closure) {
             $action = [$action];
         } elseif (is_array($action)) {
+            $actionClassName = Arr::first($action);
+
             // For this sort of syntax $api->post('login', [LoginController::class, 'login']);
-            if (is_string(Arr::first($action)) && class_exists(Arr::first($action)) && count($action) == 2) {
+            if (is_string($actionClassName) && class_exists($actionClassName) && count($action) === 2) {
                 $action = implode('@', $action);
                 $action = ['uses' => $action, 'controller' => $action];
             }
         }
 
         $action = $this->mergeLastGroupAttributes($action);
-
         $action = $this->addControllerMiddlewareToRouteAction($action);
 
         $uri = $uri === '/' ? $uri : '/'.trim($uri, '/');
@@ -357,7 +360,7 @@ class Router
 
         $action['uri'] = $uri;
 
-        return $this->adapter->addRoute((array) $methods, $action['version'], $uri, $action);
+        $this->adapter->addRoute((array) $methods, $action['version'], $uri, $action);
     }
 
     /**
@@ -367,7 +370,7 @@ class Router
      *
      * @return array
      */
-    protected function addControllerMiddlewareToRouteAction(array $action)
+    protected function addControllerMiddlewareToRouteAction(array $action) : array
     {
         array_unshift($action['middleware'], 'api.controllers');
 
@@ -381,7 +384,7 @@ class Router
      *
      * @return array
      */
-    protected function mergeLastGroupAttributes(array $attributes)
+    protected function mergeLastGroupAttributes(array $attributes) : array
     {
         if (empty($this->groupStack)) {
             return $this->mergeGroup($attributes, []);
@@ -398,7 +401,7 @@ class Router
      *
      * @return array
      */
-    protected function mergeGroup(array $new, array $old)
+    protected function mergeGroup(array $new, array $old) : array
     {
         $new['namespace'] = $this->formatNamespace($new, $old);
 
@@ -437,7 +440,7 @@ class Router
      *
      * @return array
      */
-    protected function formatArrayBasedOption($option, array $new)
+    protected function formatArrayBasedOption(string $option, array $new) : array
     {
         $value = Arr::get($new, $option, []);
 
@@ -452,7 +455,7 @@ class Router
      *
      * @return string
      */
-    protected function formatUses(array $new, array $old)
+    protected function formatUses(array $new, array $old) : string
     {
         if (isset($old['namespace']) && is_string($new['uses']) && strpos($new['uses'], '\\') !== 0) {
             return $old['namespace'].'\\'.$new['uses'];
@@ -467,13 +470,15 @@ class Router
      * @param array $new
      * @param array $old
      *
-     * @return string
+     * @return string|null
      */
-    protected function formatNamespace(array $new, array $old)
+    protected function formatNamespace(array $new, array $old) : ?string
     {
-        if (isset($new['namespace']) && isset($old['namespace'])) {
+        if (isset($new['namespace'], $old['namespace'])) {
             return trim($old['namespace'], '\\').'\\'.trim($new['namespace'], '\\');
-        } elseif (isset($new['namespace'])) {
+        }
+
+        if (isset($new['namespace'])) {
             return trim($new['namespace'], '\\');
         }
 
@@ -488,7 +493,7 @@ class Router
      *
      * @return string
      */
-    protected function formatPrefix($new, $old)
+    protected function formatPrefix(array $new, array $old) : string
     {
         if (isset($new['prefix'])) {
             return trim(Arr::get($old, 'prefix'), '/').'/'.trim($new['prefix'], '/');
@@ -500,13 +505,13 @@ class Router
     /**
      * Dispatch a request via the adapter.
      *
-     * @param \Dingo\Api\Http\Request $request
+     * @param Request $request
      *
-     * @throws \Exception
+     * @return Response
+     * @throws Exception
      *
-     * @return \Dingo\Api\Http\Response
      */
-    public function dispatch(Request $request)
+    public function dispatch(Request $request) : Response
     {
         $this->currentRoute = null;
 
@@ -533,12 +538,12 @@ class Router
      * Prepare a response by transforming and formatting it correctly.
      *
      * @param mixed                   $response
-     * @param \Dingo\Api\Http\Request $request
+     * @param Request $request
      * @param string                  $format
      *
-     * @return \Dingo\Api\Http\Response
+     * @return Response
      */
-    protected function prepareResponse($response, Request $request, $format)
+    protected function prepareResponse($response, Request $request, string $format) : Response
     {
         if ($response instanceof IlluminateResponse) {
             $response = Response::makeFromExisting($response);
@@ -574,11 +579,11 @@ class Router
     /**
      * Gather the middleware for the given route.
      *
-     * @param mixed $route
+     * @param IlluminateRoute $route
      *
      * @return array
      */
-    public function gatherRouteMiddlewares($route)
+    public function gatherRouteMiddlewares(IlluminateRoute $route) : array
     {
         return $this->adapter->gatherRouteMiddlewares($route);
     }
@@ -588,9 +593,9 @@ class Router
      *
      * @return bool
      */
-    protected function requestIsConditional()
+    protected function requestIsConditional() : bool
     {
-        return $this->getCurrentRoute()->requestIsConditional();
+        return $this->getCurrentRoute() ? $this->getCurrentRoute()->requestIsConditional() : false;
     }
 
     /**
@@ -600,7 +605,7 @@ class Router
      *
      * @return void
      */
-    public function setConditionalRequest($conditionalRequest)
+    public function setConditionalRequest(bool $conditionalRequest) : void
     {
         $this->conditionalRequest = $conditionalRequest;
     }
@@ -608,9 +613,9 @@ class Router
     /**
      * Get the current request instance.
      *
-     * @return \Dingo\Api\Http\Request
+     * @return Request
      */
-    public function getCurrentRequest()
+    public function getCurrentRequest() : Request
     {
         return $this->container['request'];
     }
@@ -618,14 +623,16 @@ class Router
     /**
      * Get the current route instance.
      *
-     * @return \Dingo\Api\Routing\Route
+     * @return IlluminateRoute|null
      */
-    public function getCurrentRoute()
+    public function getCurrentRoute() : ?IlluminateRoute
     {
         if (isset($this->currentRoute)) {
             return $this->currentRoute;
-        } elseif (! $this->hasDispatchedRoutes() || ! $route = $this->container['request']->route()) {
-            return;
+        }
+
+        if (! $this->hasDispatchedRoutes() || ! $route = $this->container['request']->route()) {
+            return null;
         }
 
         return $this->currentRoute = $this->createRoute($route);
@@ -634,9 +641,9 @@ class Router
     /**
      * Get the currently dispatched route instance.
      *
-     * @return \Illuminate\Routing\Route
+     * @return IlluminateRoute
      */
-    public function current()
+    public function current() : IlluminateRoute
     {
         return $this->getCurrentRoute();
     }
@@ -644,11 +651,11 @@ class Router
     /**
      * Create a new route instance from an adapter route.
      *
-     * @param array|\Illuminate\Routing\Route $route
+     * @param IlluminateRoute $route
      *
-     * @return \Dingo\Api\Routing\Route
+     * @return Route
      */
-    public function createRoute($route)
+    public function createRoute(IlluminateRoute $route) : Route
     {
         return new Route($this->adapter, $this->container, $this->container['request'], $route);
     }
@@ -656,7 +663,7 @@ class Router
     /**
      * Set the current route instance.
      *
-     * @param \Dingo\Api\Routing\Route $route
+     * @param Route $route
      *
      * @return void
      */
@@ -694,11 +701,11 @@ class Router
     /**
      * Get all routes registered on the adapter.
      *
-     * @param string $version
+     * @param string|null $version
      *
      * @return mixed
      */
-    public function getRoutes($version = null)
+    public function getRoutes(string $version = null)
     {
         $routes = $this->adapter->getIterableRoutes($version);
 
@@ -709,12 +716,10 @@ class Router
         $collections = [];
 
         foreach ($routes as $key => $value) {
-            $collections[$key] = new RouteCollection($this->container['request']);
+            $collections[$key] = new RouteCollection();
 
             foreach ($value as $route) {
-                $route = $this->createRoute($route);
-
-                $collections[$key]->add($route);
+                $collections[$key]->add( $this->createRoute($route) );
             }
         }
 
@@ -726,7 +731,7 @@ class Router
      *
      * @return array
      */
-    public function getAdapterRoutes()
+    public function getAdapterRoutes() : array
     {
         return $this->adapter->getRoutes();
     }
@@ -738,7 +743,7 @@ class Router
      *
      * @return void
      */
-    public function setAdapterRoutes(array $routes)
+    public function setAdapterRoutes(array $routes) : void
     {
         $this->adapter->setRoutes($routes);
 
@@ -750,7 +755,7 @@ class Router
      *
      * @return int
      */
-    public function getRoutesDispatched()
+    public function getRoutesDispatched() : int
     {
         return $this->routesDispatched;
     }
@@ -760,7 +765,7 @@ class Router
      *
      * @return bool
      */
-    public function hasDispatchedRoutes()
+    public function hasDispatchedRoutes() : bool
     {
         return $this->routesDispatched > 0;
     }
@@ -770,7 +775,7 @@ class Router
      *
      * @return string|null
      */
-    public function currentRouteName()
+    public function currentRouteName() : ?string
     {
         return $this->current() ? $this->current()->getName() : null;
     }
@@ -778,14 +783,14 @@ class Router
     /**
      * Alias for the "currentRouteNamed" method.
      *
-     * @param mixed string
+     * @param string ...$names
      *
      * @return bool
      */
-    public function is()
+    public function is(...$names) : bool
     {
-        foreach (func_get_args() as $pattern) {
-            if (Str::is($pattern, $this->currentRouteName())) {
+        foreach ($names as $name) {
+            if (Str::is($name, $this->currentRouteName())) {
                 return true;
             }
         }
@@ -800,9 +805,9 @@ class Router
      *
      * @return bool
      */
-    public function currentRouteNamed($name)
+    public function currentRouteNamed(string $name) : bool
     {
-        return $this->current() ? $this->current()->getName() == $name : false;
+        return $this->current() ? $this->current()->getName() === $name : false;
     }
 
     /**
@@ -810,10 +815,10 @@ class Router
      *
      * @return string|null
      */
-    public function currentRouteAction()
+    public function currentRouteAction() : ?string
     {
         if (! $route = $this->current()) {
-            return;
+            return null;
         }
 
         $action = $route->getAction();
@@ -824,13 +829,13 @@ class Router
     /**
      * Alias for the "currentRouteUses" method.
      *
-     * @param  mixed  string
+     * @param  string ...$uses
      *
      * @return bool
      */
-    public function uses()
+    public function uses(...$uses) : bool
     {
-        foreach (func_get_args() as $pattern) {
+        foreach ($uses as $pattern) {
             if (Str::is($pattern, $this->currentRouteAction())) {
                 return true;
             }
@@ -846,8 +851,8 @@ class Router
      *
      * @return bool
      */
-    public function currentRouteUses($action)
+    public function currentRouteUses(string $action) : bool
     {
-        return $this->currentRouteAction() == $action;
+        return $this->currentRouteAction() === $action;
     }
 }

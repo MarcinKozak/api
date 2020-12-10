@@ -2,6 +2,7 @@
 
 namespace Dingo\Api\Contract\Http;
 
+use Dingo\Api\Http\Request as ApiRequest;
 use Illuminate\Http\Request as IlluminateRequest;
 
 interface Request
@@ -9,9 +10,9 @@ interface Request
     /**
      * Create a new Dingo request instance from an Illuminate request instance.
      *
-     * @param \Illuminate\Http\Request $old
+     * @param IlluminateRequest $old
      *
-     * @return \Dingo\Api\Http\Request
+     * @return ApiRequest
      */
-    public function createFromIlluminate(IlluminateRequest $old);
+    public static function createFromIlluminate(IlluminateRequest $old) : ApiRequest;
 }

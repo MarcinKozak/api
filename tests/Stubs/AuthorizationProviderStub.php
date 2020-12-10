@@ -13,7 +13,7 @@ class AuthorizationProviderStub extends Authorization
         $this->validateAuthorizationHeader($request);
     }
 
-    public function getAuthorizationMethod()
+    public function getAuthorizationMethod() : string
     {
         return 'foo';
     }

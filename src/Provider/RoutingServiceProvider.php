@@ -62,15 +62,4 @@ class RoutingServiceProvider extends ServiceProvider
         });
     }
 
-    /**
-     * Get the URL generator request rebinder.
-     *
-     * @return \Closure
-     */
-    private function requestRebinder()
-    {
-        return function ($app, $request) {
-            $app['api.url']->setRequest($request);
-        };
-    }
 }

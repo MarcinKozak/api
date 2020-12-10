@@ -8,15 +8,12 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 class UnknownVersionException extends HttpException
 {
     /**
-     * Create a new unknown version exception instance.
-     *
-     * @param string     $message
-     * @param \Exception $previous
-     * @param int        $code
-     *
-     * @return void
+     * UnknownVersionException constructor.
+     * @param null $message
+     * @param Exception|null $previous
+     * @param int|null $code
      */
-    public function __construct($message = null, Exception $previous = null, $code = 0)
+    public function __construct($message = null, Exception $previous = null, ?int $code = 0)
     {
         parent::__construct(400, $message ?: 'The version given was unknown or has no registered routes.', $previous, [], $code);
     }
