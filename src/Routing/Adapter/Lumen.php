@@ -15,6 +15,7 @@ use Laravel\Lumen\Application;
 use Dingo\Api\Contract\Routing\Adapter;
 use Dingo\Api\Exception\UnknownVersionException;
 use Illuminate\Routing\Route as BaseRoute;
+use Symfony\Component\HttpFoundation\Response;
 
 class Lumen implements Adapter
 {
@@ -100,7 +101,7 @@ class Lumen implements Adapter
      *
      * @return mixed
      */
-    public function dispatch(Request $request, $version)
+    public function dispatch(Request $request, string $version) : Response
     {
         if (! isset($this->routes[$version])) {
             throw new UnknownVersionException;

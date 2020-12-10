@@ -48,12 +48,12 @@ class Factory {
      * Register a transformer binding resolver for a class.
      *
      * @param string $class
-     * @param Resolver $resolver
+     * @param $resolver
      * @param array $parameters
      * @param Closure|null $after
      * @return Binding
      */
-    public function register(string $class, Resolver $resolver, array $parameters = [], Closure $after = null): Binding {
+    public function register(string $class, $resolver, array $parameters = [], Closure $after = null): Binding {
         return $this->bindings[$class] = $this->createBinding($resolver, $parameters, $after);
     }
 
@@ -67,7 +67,7 @@ class Factory {
     public function transform($response) : array {
         $binding = $this->getBinding($response);
 
-        return $this->adapter->transform($response, $binding->resolveTransformer(), $binding, $this->getRequest());
+        return $this->adapter->transform($response, $binding, $this->getRequest());
     }
 
     /**
@@ -117,13 +117,15 @@ class Factory {
     }
 
     /**
-     * @param Resolver $resolver
+     * @param $resolver
      * @param array $parameters
      * @param Closure|null $callback
      * @return Binding
      */
-    protected function createBinding(Resolver $resolver, array $parameters = [], Closure $callback = null): Binding {
-        return new Binding($this->container, $resolver, $parameters, $callback);
+    protected function createBinding($resolver, array $parameters = [], Closure $callback = null): Binding {
+        $resolver = (new Resolver($resolver))->create($this->container);
+
+        return new Binding($resolver, $parameters, $callback);
     }
 
     /**

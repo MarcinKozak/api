@@ -3,24 +3,17 @@
 namespace Dingo\Api\Transformer;
 
 use Closure;
-use Illuminate\Container\Container;
 use League\Fractal\TransformerAbstract;
 
 class Binding
 {
-    /**
-     * Illuminate container instance.
-     *
-     * @var Container
-     */
-    protected $container;
 
     /**
-     * Binding resolver.
+     * Binding transformer.
      *
-     * @var Resolver
+     * @var TransformerAbstract
      */
-    protected $resolver;
+    protected $transformer;
 
     /**
      * Array of parameters.
@@ -45,27 +38,15 @@ class Binding
 
     /**
      * Binding constructor.
-     * @param Container $container
-     * @param Resolver $resolver
+     * @param TransformerAbstract $transformer
      * @param array $parameters
      * @param Closure|null $callback
      */
-    public function __construct(Container $container, Resolver $resolver, array $parameters = [], Closure $callback = null)
+    public function __construct(TransformerAbstract $transformer, array $parameters = [], Closure $callback = null)
     {
-        $this->container = $container;
-        $this->resolver = $resolver;
+        $this->transformer = $transformer;
         $this->parameters = $parameters;
         $this->callback = $callback;
-    }
-
-    /**
-     * Resolve a transformer binding instance.
-     *
-     * @return TransformerAbstract
-     */
-    public function resolveTransformer() : TransformerAbstract
-    {
-        return $this->resolver->create($this->container);
     }
 
     /**
@@ -90,6 +71,13 @@ class Binding
     public function getParameters() : array
     {
         return $this->parameters;
+    }
+
+    /**
+     * @return TransformerAbstract
+     */
+    public function getTransformer() : TransformerAbstract {
+        return $this->transformer;
     }
 
     /**

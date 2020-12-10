@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\RouteCollection;
 use Illuminate\Routing\Router;
+use Symfony\Component\HttpFoundation\Response;
 
 class Laravel implements Adapter
 {
@@ -73,7 +74,7 @@ class Laravel implements Adapter
      *
      * @return mixed
      */
-    public function dispatch(Request $request, $version)
+    public function dispatch(Request $request, string $version) : Response
     {
         if (! isset($this->routes[$version])) {
             throw new UnknownVersionException;
@@ -127,7 +128,7 @@ class Laravel implements Adapter
      *
      * @return array
      */
-    public function getRouteProperties($route, Request $request)
+    public function getRouteProperties(Route $route, Request $request) : array
     {
         if (method_exists($route, 'uri') && method_exists($route, 'methods')) {
             return [$route->uri(), $route->methods(), $route->getAction()];

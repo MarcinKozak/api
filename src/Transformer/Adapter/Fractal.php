@@ -5,7 +5,6 @@ namespace Dingo\Api\Transformer\Adapter;
 use Dingo\Api\Http\Request;
 use Dingo\Api\Transformer\Binding;
 use Illuminate\Pagination\AbstractPaginator;
-use League\Fractal\Resource\Collection;
 use League\Fractal\Resource\ResourceInterface;
 use League\Fractal\TransformerAbstract;
 use Dingo\Api\Contract\Transformer\Adapter;
@@ -15,7 +14,7 @@ use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use Illuminate\Support\Collection as IlluminateCollection;
 use League\Fractal\Resource\Collection as FractalCollection;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Contracts\Pagination\Paginator as IlluminatePaginator;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class Fractal implements Adapter
 {
@@ -66,24 +65,23 @@ class Fractal implements Adapter
      * Transform a response with a transformer.
      *
      * @param mixed $response
-     * @param object $transformer
      * @param Binding $binding
      * @param Request $request
      * @return array
      */
-    public function transform($response, object $transformer, Binding $binding, Request $request) : array
+    public function transform($response, Binding $binding, Request $request) : array
     {
         $this->parseFractalIncludes($request);
 
-        $resource = $this->createResource($response, $transformer, $parameters = $binding->getParameters());
+        $transformer    = $binding->getTransformer();
+        $parameters     = $binding->getParameters();
+        $resource       = $this->createResource($response, $transformer, $parameters);
 
         // If the response is a paginator then we'll create a new paginator
         // adapter for Laravel and set the paginator instance on our
         // collection resource.
-        if ($response instanceof IlluminatePaginator && $resource instanceof Collection) {
-            $paginator = $this->createPaginatorAdapter($response);
-
-            $resource->setPaginator($paginator);
+        if ($response instanceof LengthAwarePaginator && $resource instanceof FractalCollection) {
+            $resource->setPaginator(new IlluminatePaginatorAdapter($response));
         }
 
         if ($this->shouldEagerLoad($response)) {
@@ -126,30 +124,18 @@ class Fractal implements Adapter
     }
 
     /**
-     * Create the Fractal paginator adapter.
-     *
-     * @param \Illuminate\Contracts\Pagination\Paginator $paginator
-     *
-     * @return \League\Fractal\Pagination\IlluminatePaginatorAdapter
-     */
-    protected function createPaginatorAdapter(IlluminatePaginator $paginator)
-    {
-        return new IlluminatePaginatorAdapter($paginator);
-    }
-
-    /**
      * Create a Fractal resource instance.
      *
      * @param $response
-     * @param object $transformer
+     * @param TransformerAbstract $transformer
      * @param array $parameters
      * @return ResourceInterface
      */
-    protected function createResource($response, object $transformer, array $parameters) : ResourceInterface
+    protected function createResource($response, TransformerAbstract $transformer, array $parameters) : ResourceInterface
     {
         $key = $parameters['key'] ?? null;
 
-        if ($response instanceof IlluminatePaginator || $response instanceof IlluminateCollection) {
+        if ($response instanceof LengthAwarePaginator || $response instanceof IlluminateCollection) {
             return new FractalCollection($response, $transformer, $key);
         }
 
